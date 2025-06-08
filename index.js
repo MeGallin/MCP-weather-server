@@ -64,13 +64,44 @@ app.post(
   mcpController.handleApiKeyGeneration,
 );
 
-// MCP routes with specific rate limiting and authentication
+// MCP routes with specific rate limiting (authentication removed for public access)
 app.post(
   '/mcp',
   mcpLimiter,
-  authenticateApiKey,
   mcpController.handleMCPRequest,
 );
+
+// SSE endpoint for VS Code MCP client fallback
+app.get('/mcp', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+  
+  // Send initial connection message
+  res.write('data: {"type":"connection","status":"connected"}\n\n');
+  
+  // Keep connection alive
+  const keepAlive = setInterval(() => {
+    res.write('data: {"type":"ping","timestamp":"' + new Date().toISOString() + '"}\n\n');
+  }, 30000);
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    clearInterval(keepAlive);
+  });
+});
+
+// OPTIONS endpoint for CORS preflight
+app.options('/mcp', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  res.sendStatus(200);
+});
 
 // Public routes
 app.get('/', (req, res) => {
@@ -81,7 +112,7 @@ app.get('/', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     endpoints: {
       health: '/health',
-      mcp: '/mcp',
+      mcp: '/mcp (public access)',
       auth: '/auth/login',
       apiKey: '/auth/api-key'
     },
@@ -108,7 +139,7 @@ if (
     res.json({
       endpoints: {
         '/health': 'GET - Health check',
-        '/mcp': 'POST - MCP request handler (requires API key)',
+        '/mcp': 'POST/GET - MCP request handler (public access)',
         '/auth/login': 'POST - User authentication',
         '/auth/api-key': 'POST - Generate API key (requires JWT token)',
       },

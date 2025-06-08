@@ -1,11 +1,27 @@
 {
-  "mcpServers": {
-    "weather-server": {
-      "command": "node",
-      "args": ["mcp-weather-stdio.js"],
-      "cwd": "C:\\xampp\\htdocs\\WebSitesDesigns\\developments\\cline-test\\MCP-weather-server",
-      "env": {
-        "NODE_ENV": "development"
+  "mcp": {
+    "servers": {
+      "weather-server-local": {
+        "command": "node",
+        "args": ["mcp-weather-stdio.js"],
+        "cwd": "C:\\xampp\\htdocs\\WebSitesDesigns\\developments\\cline-test\\MCP-weather-server",
+        "transportType": "stdio",
+        "autoApprove": [],
+        "disabled": false,
+        "timeout": 60,
+        "env": {
+          "NODE_ENV": "development"
+        }
+      },
+      "weather-server-deployed": {
+        "url": "https://mcp-weather-server-o6o8.onrender.com/mcp",
+        "transportType": "http",
+        "autoApprove": [],
+        "disabled": false,
+        "timeout": 30,
+        "headers": {
+          "Content-Type": "application/json"
+        }
       }
     }
   }
