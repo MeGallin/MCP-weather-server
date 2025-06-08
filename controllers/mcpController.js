@@ -170,6 +170,7 @@ export default {
             }
 
             // Continue with weather API call for tools/call
+            // Fall through to weather API processing below
             break;
 
           default:
