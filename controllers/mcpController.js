@@ -14,6 +14,8 @@ import {
 
 export default {
   async handleMCPRequest(req, res) {
+    let mcpContext = null; // Declare at function scope for error handling
+
     try {
       // Set VS Code MCP-specific headers for connection stability
       res.set({
@@ -29,7 +31,7 @@ export default {
       });
 
       // Validate incoming MCP request
-      const { error, value: mcpContext } = validateMCPRequest(req.body);
+      const { error, value } = validateMCPRequest(req.body);
       if (error) {
         logger.warn('Invalid MCP request:', error.details);
         return res.status(400).json({
@@ -37,6 +39,8 @@ export default {
           details: error.details.map((d) => d.message),
         });
       }
+
+      mcpContext = value; // Assign to function-scoped variable
 
       // Handle different MCP methods for JSON-RPC format
       if (mcpContext.metadata?.format === 'jsonrpc') {
@@ -104,8 +108,28 @@ export default {
             return res.json(toolsResponse);
 
           case 'tools/call':
-            // Process the tool call - convert location to coordinates if needed
-            const toolArgs = mcpContext.input.queryParams;
+            // Process the tool call - get tool name and arguments
+            const toolName = mcpContext.params?.name || 'get_weather';
+            const toolArgs = mcpContext.params?.arguments || {};
+
+            // Validate tool name
+            if (toolName !== 'get_weather') {
+              const errorResponse = {
+                jsonrpc: '2.0',
+                id: mcpContext.id,
+                error: {
+                  code: -32602,
+                  message: `Unknown tool: ${toolName}`,
+                  data: {
+                    availableTools: ['get_weather'],
+                  },
+                },
+              };
+              return res.json(errorResponse);
+            }
+
+            // Convert location to coordinates if needed
+            let finalArgs = { ...toolArgs };
 
             if (
               toolArgs.location &&
@@ -129,7 +153,7 @@ export default {
 
                 if (geoResponse.data?.results?.[0]) {
                   const result = geoResponse.data.results[0];
-                  mcpContext.input.queryParams = {
+                  finalArgs = {
                     ...toolArgs,
                     latitude: result.latitude,
                     longitude: result.longitude,
@@ -169,8 +193,13 @@ export default {
               }
             }
 
-            // Continue with weather API call for tools/call
-            // Fall through to weather API processing below
+            // Set up for weather API call
+            mcpContext.input = {
+              endpointName: 'weather',
+              queryParams: finalArgs,
+            };
+
+            // Continue with weather API processing below
             break;
 
           default:
