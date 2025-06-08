@@ -195,7 +195,7 @@ export default {
 
             // Set up for weather API call
             mcpContext.input = {
-              endpointName: 'weather',
+              endpointName: 'getWeather',
               queryParams: finalArgs,
             };
 

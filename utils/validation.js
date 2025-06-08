@@ -84,17 +84,18 @@ export function validateMCPRequest(requestBody) {
         break;
 
       case 'tools/call':
-        const toolName = requestBody.params?.name || 'getWeather';
+        const toolName = requestBody.params?.name || 'get_weather';
         const toolArgs = requestBody.params?.arguments || {};
         normalized = {
           input: {
-            endpointName: 'getWeather', // Map to weather endpoint
+            endpointName: 'getWeather', // Map to correct weather endpoint
             queryParams: toolArgs,
             authHeaders: {},
           },
           jsonrpc: requestBody.jsonrpc,
           id: requestBody.id,
           method: requestBody.method,
+          params: requestBody.params, // Include params for controller access
           tools: [],
           metadata: {
             format: 'jsonrpc',
