@@ -213,7 +213,9 @@ export default {
           error: 'Invalid or missing endpointName',
           availableEndpoints: Object.keys(endpoints),
         });
-      } // Prepare request configuration
+      }
+
+      // Prepare request configuration
       const endpointConfig = endpoints[endpointName];
 
       // Merge defaultParams with queryParams, with queryParams taking precedence
