@@ -26,6 +26,7 @@ Update your VS Code `settings.json` to use the local stdio server:
 ```
 
 **Benefits:**
+
 - ✅ No authentication required
 - ✅ Direct local access to weather APIs
 - ✅ Faster response times
@@ -53,6 +54,7 @@ If you prefer to use the remote Render deployment, update your configuration:
 ```
 
 **Benefits:**
+
 - ✅ No local server required
 - ✅ Centralized deployment
 - ✅ Public access without API keys
@@ -82,6 +84,7 @@ For production use with API key authentication:
 ```
 
 **Note:** You would need to generate an API key first:
+
 1. POST to `/auth/login` with credentials
 2. POST to `/auth/api-key` with JWT token
 3. Use the returned API key in the configuration

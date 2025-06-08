@@ -19,7 +19,7 @@ console.log('1. Starting MCP Weather Server...');
 const serverProcess = spawn('node', ['../../index.js'], {
   cwd: __dirname,
   stdio: ['pipe', 'pipe', 'pipe'],
-  env: { ...process.env, NODE_ENV: 'production', PORT: '8001' }
+  env: { ...process.env, NODE_ENV: 'production', PORT: '8001' },
 });
 
 let serverOutput = '';
@@ -38,15 +38,17 @@ setTimeout(async () => {
   console.log('2. Simulating Render.com health checks...\n');
 
   // Test 1: Root endpoint with Go-http-client (Render's health check)
-  console.log('   🔄 Testing root endpoint with Render health check user agent...');
+  console.log(
+    '   🔄 Testing root endpoint with Render health check user agent...',
+  );
   try {
     const { default: fetch } = await import('node-fetch');
-    
+
     const response = await fetch('http://localhost:8001/', {
       method: 'GET',
       headers: {
-        'User-Agent': 'Go-http-client/2.0'
-      }
+        'User-Agent': 'Go-http-client/2.0',
+      },
     });
 
     if (response.ok) {
@@ -66,12 +68,12 @@ setTimeout(async () => {
   console.log('\n   🔄 Testing /health endpoint...');
   try {
     const { default: fetch } = await import('node-fetch');
-    
+
     const response = await fetch('http://localhost:8001/health', {
       method: 'GET',
       headers: {
-        'User-Agent': 'Go-http-client/2.0'
-      }
+        'User-Agent': 'Go-http-client/2.0',
+      },
     });
 
     if (response.ok) {
@@ -91,23 +93,27 @@ setTimeout(async () => {
   console.log('\n   🔄 Testing 404 handling for health check user agent...');
   try {
     const { default: fetch } = await import('node-fetch');
-    
+
     const response = await fetch('http://localhost:8001/nonexistent', {
       method: 'GET',
       headers: {
-        'User-Agent': 'Go-http-client/2.0'
-      }
+        'User-Agent': 'Go-http-client/2.0',
+      },
     });
 
     console.log('   ✅ 404 HANDLING TEST');
     console.log(`      Status: ${response.status} (expected 404)`);
-    console.log('      Should not generate warning logs for health check user agent');
+    console.log(
+      '      Should not generate warning logs for health check user agent',
+    );
   } catch (error) {
     console.log('   ❌ 404 HANDLING ERROR:', error.message);
   }
 
   console.log('\n📋 Summary:');
-  console.log('   • Root endpoint (/) now responds properly to Render health checks');
+  console.log(
+    '   • Root endpoint (/) now responds properly to Render health checks',
+  );
   console.log('   • Health endpoint (/health) available as backup');
   console.log('   • Reduced logging noise for health check user agents');
   console.log('   • Server should deploy without 404 warnings on Render.com');

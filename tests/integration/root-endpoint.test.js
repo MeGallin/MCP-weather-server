@@ -33,7 +33,7 @@ describe('Root Endpoint Health Check', () => {
   beforeAll(() => {
     // Create a minimal app with just the root endpoint
     app = express();
-    
+
     // Basic middleware
     app.use(helmet({ contentSecurityPolicy: false }));
     app.use(cors());
@@ -50,10 +50,10 @@ describe('Root Endpoint Health Check', () => {
           health: '/health',
           mcp: '/mcp',
           auth: '/auth/login',
-          apiKey: '/auth/api-key'
+          apiKey: '/auth/api-key',
         },
         documentation: 'https://github.com/your-repo/MCP-weather-server#readme',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -80,7 +80,7 @@ describe('Root Endpoint Health Check', () => {
     expect(response.body).toHaveProperty('environment');
     expect(response.body).toHaveProperty('endpoints');
     expect(response.body).toHaveProperty('timestamp');
-    
+
     // Verify endpoints are listed
     expect(response.body.endpoints).toHaveProperty('health', '/health');
     expect(response.body.endpoints).toHaveProperty('mcp', '/mcp');
@@ -101,11 +101,9 @@ describe('Root Endpoint Health Check', () => {
 
   test('should respond faster than typical health check timeout', async () => {
     const startTime = Date.now();
-    
-    await request(app)
-      .get('/')
-      .expect(200);
-    
+
+    await request(app).get('/').expect(200);
+
     const responseTime = Date.now() - startTime;
     expect(responseTime).toBeLessThan(1000); // Should respond in under 1 second
   });
@@ -117,7 +115,7 @@ describe('Root Endpoint Health Check', () => {
     // Both should have version and environment
     expect(rootResponse.body.version).toBe(healthResponse.body.version);
     expect(rootResponse.body.environment).toBe(healthResponse.body.environment);
-    
+
     // Root should have additional endpoint information
     expect(rootResponse.body).toHaveProperty('endpoints');
     expect(rootResponse.body).toHaveProperty('name');
@@ -125,13 +123,13 @@ describe('Root Endpoint Health Check', () => {
   });
 
   test('should handle concurrent requests without errors', async () => {
-    const requests = Array(10).fill().map(() => 
-      request(app).get('/').expect(200)
-    );
+    const requests = Array(10)
+      .fill()
+      .map(() => request(app).get('/').expect(200));
 
     const responses = await Promise.all(requests);
-    
-    responses.forEach(response => {
+
+    responses.forEach((response) => {
       expect(response.body).toHaveProperty('name', 'MCP Weather Server');
       expect(response.body).toHaveProperty('status', 'running');
     });

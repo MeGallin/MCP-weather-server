@@ -65,30 +65,30 @@ app.post(
 );
 
 // MCP routes with specific rate limiting (authentication removed for public access)
-app.post(
-  '/mcp',
-  mcpLimiter,
-  mcpController.handleMCPRequest,
-);
+app.post('/mcp', mcpLimiter, mcpController.handleMCPRequest);
 
 // SSE endpoint for VS Code MCP client fallback
 app.get('/mcp', (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
+    Connection: 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
+    'Access-Control-Allow-Headers': 'Cache-Control',
   });
-  
+
   // Send initial connection message
   res.write('data: {"type":"connection","status":"connected"}\n\n');
-  
+
   // Keep connection alive
   const keepAlive = setInterval(() => {
-    res.write('data: {"type":"ping","timestamp":"' + new Date().toISOString() + '"}\n\n');
+    res.write(
+      'data: {"type":"ping","timestamp":"' +
+        new Date().toISOString() +
+        '"}\n\n',
+    );
   }, 30000);
-  
+
   // Handle client disconnect
   req.on('close', () => {
     clearInterval(keepAlive);
@@ -99,7 +99,10 @@ app.get('/mcp', (req, res) => {
 app.options('/mcp', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-API-Key',
+  );
   res.sendStatus(200);
 });
 
@@ -114,10 +117,10 @@ app.get('/', (req, res) => {
       health: '/health',
       mcp: '/mcp (public access)',
       auth: '/auth/login',
-      apiKey: '/auth/api-key'
+      apiKey: '/auth/api-key',
     },
     documentation: 'https://github.com/your-repo/MCP-weather-server#readme',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -162,10 +165,11 @@ app.use(errorHandler);
 // Handle 404 errors
 app.use('*', (req, res) => {
   // Reduce logging for common health check patterns
-  const isHealthCheck = req.get('User-Agent')?.includes('Go-http-client') || 
-                       req.get('User-Agent')?.includes('curl') ||
-                       req.originalUrl === '/favicon.ico';
-  
+  const isHealthCheck =
+    req.get('User-Agent')?.includes('Go-http-client') ||
+    req.get('User-Agent')?.includes('curl') ||
+    req.originalUrl === '/favicon.ico';
+
   if (!isHealthCheck) {
     logger.warn('404 Not Found', {
       url: req.originalUrl,
@@ -179,7 +183,7 @@ app.use('*', (req, res) => {
     error: 'Not Found',
     message: 'The requested resource was not found',
     path: req.originalUrl,
-    suggestion: 'Try /health for server status or /mcp for MCP requests'
+    suggestion: 'Try /health for server status or /mcp for MCP requests',
   });
 });
 

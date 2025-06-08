@@ -21,10 +21,10 @@ testApp.get('/', (req, res) => {
       health: '/health',
       mcp: '/mcp',
       auth: '/auth/login',
-      apiKey: '/auth/api-key'
+      apiKey: '/auth/api-key',
     },
     documentation: 'https://github.com/your-repo/MCP-weather-server#readme',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -35,23 +35,28 @@ try {
   const mockReq = {
     path: '/',
     method: 'GET',
-    get: (header) => header === 'User-Agent' ? 'Go-http-client/2.0' : undefined
+    get: (header) =>
+      header === 'User-Agent' ? 'Go-http-client/2.0' : undefined,
   };
-  
+
   const mockRes = {
     json: (data) => {
       console.log('   ✅ Root endpoint handler works correctly');
       console.log(`   📋 Response: ${data.name} - ${data.status}`);
-      console.log(`   🔗 Endpoints available: ${Object.keys(data.endpoints).join(', ')}`);
+      console.log(
+        `   🔗 Endpoints available: ${Object.keys(data.endpoints).join(', ')}`,
+      );
       return mockRes;
     },
-    status: () => mockRes
+    status: () => mockRes,
   };
 
   // Get the route handler
   const router = testApp._router;
-  const layer = router.stack.find(layer => layer.route && layer.route.path === '/');
-  
+  const layer = router.stack.find(
+    (layer) => layer.route && layer.route.path === '/',
+  );
+
   if (layer && layer.route) {
     // Simulate the request
     layer.route.stack[0].handle(mockReq, mockRes);
@@ -63,7 +68,9 @@ try {
 }
 
 console.log('\n2. Verifying 404 handler improvement...');
-console.log('   ✅ Health check user agents (Go-http-client) will have reduced logging');
+console.log(
+  '   ✅ Health check user agents (Go-http-client) will have reduced logging',
+);
 console.log('   ✅ 404 responses include helpful suggestions');
 
 console.log('\n📋 Render.com Deployment Fix Summary:');
@@ -73,6 +80,8 @@ console.log('   • Response includes available endpoints for documentation');
 console.log('   • Server status and version information provided');
 
 console.log('\n🚀 Ready for Render.com deployment!');
-console.log('   The warning "404 Not Found" for GET / should no longer appear.');
+console.log(
+  '   The warning "404 Not Found" for GET / should no longer appear.',
+);
 
 process.exit(0);
