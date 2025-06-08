@@ -232,7 +232,8 @@ export default {
               queryParams: finalArgs,
             };
 
-          // Continue with weather API processing below
+            // Break out of switch to continue with weather API processing
+            break;
 
           default:
             const errorResponse = {
