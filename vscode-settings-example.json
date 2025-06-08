@@ -18,9 +18,20 @@
         "transportType": "http",
         "autoApprove": [],
         "disabled": false,
-        "timeout": 30,
+        "timeout": 60,
+        "retryCount": 3,
+        "retryDelay": 2000,
+        "keepAlive": true,
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "User-Agent": "vscode-mcp-client/1.0.0",
+          "Accept": "application/json",
+          "Connection": "keep-alive"
+        },
+        "healthCheck": {
+          "enabled": true,
+          "url": "https://mcp-weather-server-o6o8.onrender.com/mcp/health",
+          "interval": 30000
         }
       }
     }

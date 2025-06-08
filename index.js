@@ -65,7 +65,51 @@ app.post(
 );
 
 // MCP routes with specific rate limiting (authentication removed for public access)
-app.post('/mcp', mcpLimiter, mcpController.handleMCPRequest);
+app.post(
+  '/mcp',
+  mcpLimiter,
+  (req, res, next) => {
+    // Add VS Code MCP client detection and optimization
+    const userAgent = req.get('User-Agent') || '';
+    const isVSCodeMCP =
+      userAgent.includes('vscode') || userAgent.includes('mcp-client');
+
+    if (isVSCodeMCP) {
+      // Set specific headers for VS Code MCP client
+      res.set({
+        'X-MCP-Transport': 'http',
+        'X-MCP-Server-Ready': 'true',
+        'Keep-Alive': 'timeout=60, max=100',
+      });
+    }
+
+    next();
+  },
+  mcpController.handleMCPRequest,
+);
+
+// Enhanced health check endpoint for MCP clients
+app.get('/mcp/health', (req, res) => {
+  res.json({
+    status: 'ready',
+    transport: 'http',
+    protocolVersion: '2024-11-05',
+    capabilities: {
+      tools: {
+        listChanged: true,
+      },
+      resources: {
+        subscribe: false,
+        listChanged: false,
+      },
+    },
+    serverInfo: {
+      name: 'MCP Weather Server',
+      version: process.env.npm_package_version || '1.0.0',
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // SSE endpoint for VS Code MCP client fallback
 app.get('/mcp', (req, res) => {

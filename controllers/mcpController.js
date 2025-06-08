@@ -15,6 +15,19 @@ import {
 export default {
   async handleMCPRequest(req, res) {
     try {
+      // Set VS Code MCP-specific headers for connection stability
+      res.set({
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'X-MCP-Server': 'weather-server',
+        'X-MCP-Version': '2024-11-05',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-API-Key',
+      });
+
       // Validate incoming MCP request
       const { error, value: mcpContext } = validateMCPRequest(req.body);
       if (error) {
