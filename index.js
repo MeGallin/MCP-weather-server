@@ -4,7 +4,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mcpController from './controllers/mcpController.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { generalLimiter, mcpLimiter, authLimiter } from './middleware/rateLimiter.js';
+import {
+  generalLimiter,
+  mcpLimiter,
+  authLimiter,
+} from './middleware/rateLimiter.js';
 import { authenticateToken, authenticateApiKey } from './middleware/auth.js';
 import { logger, logRequest } from './utils/logger.js';
 
@@ -12,16 +16,21 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: process.env.NODE_ENV === 'production'
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production',
+  }),
+);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN === '*' ? true : process.env.CORS_ORIGIN?.split(','),
+  origin:
+    process.env.CORS_ORIGIN === '*'
+      ? true
+      : process.env.CORS_ORIGIN?.split(','),
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-  credentials: true
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
@@ -35,50 +44,66 @@ app.use((req, res, next) => {
 app.use(generalLimiter);
 
 // Body parsing middleware
-app.use(express.json({ 
-  limit: process.env.REQUEST_SIZE_LIMIT || '10mb' 
-}));
-app.use(express.urlencoded({ 
-  extended: true,
-  limit: process.env.REQUEST_SIZE_LIMIT || '10mb'
-}));
+app.use(
+  express.json({
+    limit: process.env.REQUEST_SIZE_LIMIT || '10mb',
+  }),
+);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: process.env.REQUEST_SIZE_LIMIT || '10mb',
+  }),
+);
 
 // Authentication routes (no rate limiting for login to allow retries)
 app.post('/auth/login', authLimiter, mcpController.handleLogin);
-app.post('/auth/api-key', authenticateToken, mcpController.handleApiKeyGeneration);
+app.post(
+  '/auth/api-key',
+  authenticateToken,
+  mcpController.handleApiKeyGeneration,
+);
 
 // MCP routes with specific rate limiting and authentication
-app.post('/mcp', mcpLimiter, authenticateApiKey, mcpController.handleMCPRequest);
+app.post(
+  '/mcp',
+  mcpLimiter,
+  authenticateApiKey,
+  mcpController.handleMCPRequest,
+);
 
 // Public routes
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
 // API documentation endpoint (development only)
-if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_API_DOCS === 'true') {
+if (
+  process.env.NODE_ENV !== 'production' &&
+  process.env.ENABLE_API_DOCS === 'true'
+) {
   app.get('/docs', (req, res) => {
     res.json({
       endpoints: {
         '/health': 'GET - Health check',
         '/mcp': 'POST - MCP request handler (requires API key)',
         '/auth/login': 'POST - User authentication',
-        '/auth/api-key': 'POST - Generate API key (requires JWT token)'
+        '/auth/api-key': 'POST - Generate API key (requires JWT token)',
       },
       authentication: {
         jwt: 'Bearer token in Authorization header',
-        apiKey: 'X-API-Key header for MCP requests'
+        apiKey: 'X-API-Key header for MCP requests',
       },
       rateLimits: {
         general: '100 requests per 15 minutes',
         mcp: '30 requests per minute',
-        auth: '5 requests per 15 minutes'
-      }
+        auth: '5 requests per 15 minutes',
+      },
     });
   });
 }
@@ -92,13 +117,13 @@ app.use('*', (req, res) => {
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
   });
-  
+
   res.status(404).json({
     error: 'Not Found',
     message: 'The requested resource was not found',
-    path: req.originalUrl
+    path: req.originalUrl,
   });
 });
 
@@ -117,6 +142,6 @@ app.listen(PORT, () => {
   logger.info(`MCP server running on port ${PORT}`, {
     port: PORT,
     environment: process.env.NODE_ENV || 'development',
-    nodeVersion: process.version
+    nodeVersion: process.version,
   });
 });

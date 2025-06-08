@@ -5,7 +5,7 @@ import {
   validateAuthRequest,
   sanitizeInput,
   isValidIP,
-  validateCoordinates
+  validateCoordinates,
 } from '../../utils/validation.js';
 
 describe('MCP Request Validation', () => {
@@ -15,12 +15,13 @@ describe('MCP Request Validation', () => {
         endpointName: 'getWeather',
         queryParams: {
           latitude: 40.7128,
-          longitude: -74.0060
-        }
+          longitude: -74.006,
+        },
       },
       tools: [],
-      metadata: {}
-    };    const result = validateMCPRequest(validRequest);
+      metadata: {},
+    };
+    const result = validateMCPRequest(validRequest);
     expect(result.error).toBeUndefined();
     expect(result.value).toEqual(validRequest);
   });
@@ -28,7 +29,7 @@ describe('MCP Request Validation', () => {
   test('should reject MCP request without input', () => {
     const invalidRequest = {
       tools: [],
-      metadata: {}
+      metadata: {},
     };
 
     const result = validateMCPRequest(invalidRequest);
@@ -39,8 +40,8 @@ describe('MCP Request Validation', () => {
   test('should reject MCP request without endpointName', () => {
     const invalidRequest = {
       input: {
-        queryParams: {}
-      }
+        queryParams: {},
+      },
     };
 
     const result = validateMCPRequest(invalidRequest);
@@ -54,20 +55,20 @@ describe('Endpoint Parameter Validation', () => {
     test('should validate valid weather parameters', () => {
       const params = {
         latitude: 40.7128,
-        longitude: -74.0060,
-        current_weather: true
+        longitude: -74.006,
+        current_weather: true,
       };
 
       const result = validateEndpointParams('getWeather', params);
       expect(result.error).toBeNull();
       expect(result.value.latitude).toBe(40.7128);
-      expect(result.value.longitude).toBe(-74.0060);
+      expect(result.value.longitude).toBe(-74.006);
     });
 
     test('should reject invalid latitude', () => {
       const params = {
         latitude: 95, // Invalid: > 90
-        longitude: -74.0060
+        longitude: -74.006,
       };
 
       const result = validateEndpointParams('getWeather', params);
@@ -78,7 +79,7 @@ describe('Endpoint Parameter Validation', () => {
     test('should reject invalid longitude', () => {
       const params = {
         latitude: 40.7128,
-        longitude: 185 // Invalid: > 180
+        longitude: 185, // Invalid: > 180
       };
 
       const result = validateEndpointParams('getWeather', params);
@@ -89,7 +90,7 @@ describe('Endpoint Parameter Validation', () => {
     test('should apply default values', () => {
       const params = {
         latitude: 40.7128,
-        longitude: -74.0060
+        longitude: -74.006,
       };
 
       const result = validateEndpointParams('getWeather', params);
@@ -101,8 +102,8 @@ describe('Endpoint Parameter Validation', () => {
     test('should validate temperature units', () => {
       const params = {
         latitude: 40.7128,
-        longitude: -74.0060,
-        temperature_unit: 'fahrenheit'
+        longitude: -74.006,
+        temperature_unit: 'fahrenheit',
       };
 
       const result = validateEndpointParams('getWeather', params);
@@ -113,8 +114,8 @@ describe('Endpoint Parameter Validation', () => {
     test('should reject invalid temperature unit', () => {
       const params = {
         latitude: 40.7128,
-        longitude: -74.0060,
-        temperature_unit: 'kelvin'
+        longitude: -74.006,
+        temperature_unit: 'kelvin',
       };
 
       const result = validateEndpointParams('getWeather', params);
@@ -135,7 +136,7 @@ describe('Endpoint Parameter Validation', () => {
 
     test('should reject invalid limit', () => {
       const params = {
-        _limit: 150 // > 100
+        _limit: 150, // > 100
       };
 
       const result = validateEndpointParams('getUsers', params);
@@ -146,7 +147,7 @@ describe('Endpoint Parameter Validation', () => {
     test('should validate sorting parameters', () => {
       const params = {
         _sort: 'name',
-        _order: 'desc'
+        _order: 'desc',
       };
 
       const result = validateEndpointParams('getUsers', params);
@@ -172,8 +173,9 @@ describe('Authentication Validation', () => {
   test('should validate login request', () => {
     const loginData = {
       username: 'testuser',
-      password: 'password123'
-    };    const result = validateAuthRequest('login', loginData);
+      password: 'password123',
+    };
+    const result = validateAuthRequest('login', loginData);
     expect(result.error).toBeUndefined();
     expect(result.value.username).toBe('testuser');
     expect(result.value.remember).toBe(false); // default
@@ -182,7 +184,7 @@ describe('Authentication Validation', () => {
   test('should reject short username', () => {
     const loginData = {
       username: 'ab', // too short
-      password: 'password123'
+      password: 'password123',
     };
 
     const result = validateAuthRequest('login', loginData);
@@ -193,7 +195,7 @@ describe('Authentication Validation', () => {
   test('should reject short password', () => {
     const loginData = {
       username: 'testuser',
-      password: '123' // too short
+      password: '123', // too short
     };
 
     const result = validateAuthRequest('login', loginData);
@@ -204,8 +206,9 @@ describe('Authentication Validation', () => {
   test('should validate API key creation', () => {
     const apiKeyData = {
       name: 'Test API Key',
-      permissions: ['read', 'write']
-    };    const result = validateAuthRequest('apiKey', apiKeyData);
+      permissions: ['read', 'write'],
+    };
+    const result = validateAuthRequest('apiKey', apiKeyData);
     expect(result.error).toBeUndefined();
     expect(result.value.permissions).toEqual(['read', 'write']);
     expect(result.value.expiresIn).toBe('30d'); // default
@@ -216,7 +219,7 @@ describe('Input Sanitization', () => {
   test('should sanitize HTML/XSS attempts', () => {
     const maliciousInput = '<script>alert("xss")</script>';
     const sanitized = sanitizeInput(maliciousInput);
-    
+
     expect(sanitized).not.toContain('<script>');
     expect(sanitized).not.toContain('</script>');
   });
@@ -224,7 +227,7 @@ describe('Input Sanitization', () => {
   test('should sanitize SQL injection attempts', () => {
     const maliciousInput = "'; DROP TABLE users; --";
     const sanitized = sanitizeInput(maliciousInput);
-    
+
     expect(sanitized).not.toContain('DROP');
     expect(sanitized).not.toContain(';');
     expect(sanitized).not.toContain("'");
@@ -234,9 +237,9 @@ describe('Input Sanitization', () => {
     const input = {
       user: {
         name: '<script>alert("xss")</script>',
-        age: 25
+        age: 25,
       },
-      tags: ['<b>tag1</b>', 'tag2']
+      tags: ['<b>tag1</b>', 'tag2'],
     };
 
     const sanitized = sanitizeInput(input);
@@ -248,17 +251,17 @@ describe('Input Sanitization', () => {
   test('should respect maxLength option', () => {
     const longString = 'a'.repeat(1000);
     const sanitized = sanitizeInput(longString, { maxLength: 100 });
-    
+
     expect(sanitized.length).toBe(100);
   });
 
   test('should allow HTML when configured', () => {
     const htmlInput = '<p>This is <b>bold</b> text</p>';
-    const sanitized = sanitizeInput(htmlInput, { 
+    const sanitized = sanitizeInput(htmlInput, {
       allowHtml: true,
-      allowedTags: ['p', 'b']
+      allowedTags: ['p', 'b'],
     });
-    
+
     expect(sanitized).toContain('<p>');
     expect(sanitized).toContain('<b>');
   });
@@ -291,46 +294,52 @@ describe('IP Validation', () => {
 
 describe('Coordinate Validation', () => {
   test('should validate correct coordinates', () => {
-    const result = validateCoordinates(40.7128, -74.0060);
-    
+    const result = validateCoordinates(40.7128, -74.006);
+
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(result.normalizedLat).toBeCloseTo(40.7128);
-    expect(result.normalizedLon).toBeCloseTo(-74.0060);
+    expect(result.normalizedLon).toBeCloseTo(-74.006);
   });
 
   test('should reject invalid latitude', () => {
-    const result = validateCoordinates(95, -74.0060);
-    
+    const result = validateCoordinates(95, -74.006);
+
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('Latitude must be between -90 and 90 degrees');
+    expect(result.errors).toContain(
+      'Latitude must be between -90 and 90 degrees',
+    );
   });
 
   test('should reject invalid longitude', () => {
     const result = validateCoordinates(40.7128, 185);
-    
+
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('Longitude must be between -180 and 180 degrees');
+    expect(result.errors).toContain(
+      'Longitude must be between -180 and 180 degrees',
+    );
   });
 
   test('should provide precision warnings', () => {
     const result = validateCoordinates(0.000001, 0.000001);
-    
+
     expect(result.valid).toBe(true);
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings[0]).toContain('precision');
   });
 
   test('should normalize coordinates', () => {
-    const result = validateCoordinates(40.71283456789, -74.00604567890);
-    
+    const result = validateCoordinates(40.71283456789, -74.0060456789);
+
     expect(result.normalizedLat).toBe(40.712835);
     expect(result.normalizedLon).toBe(-74.006046);
   });
 
   test('should warn about equator/prime meridian intersection', () => {
     const result = validateCoordinates(0.5, 0.5);
-    
-    expect(result.warnings).toContain('Coordinates appear to be near the equator/prime meridian intersection');
+
+    expect(result.warnings).toContain(
+      'Coordinates appear to be near the equator/prime meridian intersection',
+    );
   });
 });

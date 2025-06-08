@@ -11,7 +11,7 @@ export const generalLimiter = rateLimit({
   message: {
     error: 'Too many requests',
     message: 'Rate limit exceeded. Try again later.',
-    retryAfter: '15 minutes'
+    retryAfter: '15 minutes',
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -20,14 +20,14 @@ export const generalLimiter = rateLimit({
       ip: req.ip,
       userAgent: req.get('User-Agent'),
       endpoint: req.path,
-      method: req.method
+      method: req.method,
     });
     res.status(429).json({
       error: 'Too many requests',
       message: 'Rate limit exceeded. Try again later.',
-      retryAfter: '15 minutes'
+      retryAfter: '15 minutes',
     });
-  }
+  },
 });
 
 /**
@@ -39,7 +39,7 @@ export const mcpLimiter = rateLimit({
   message: {
     error: 'MCP rate limit exceeded',
     message: 'Too many MCP requests. Please slow down.',
-    retryAfter: '5 minutes'
+    retryAfter: '5 minutes',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -52,14 +52,14 @@ export const mcpLimiter = rateLimit({
       identifier: req.user?.id ? `user:${req.user.id}` : req.ip,
       userId: req.user?.id,
       username: req.user?.username,
-      endpoint: req.path
+      endpoint: req.path,
     });
     res.status(429).json({
       error: 'MCP rate limit exceeded',
       message: 'Too many MCP requests. Please slow down.',
-      retryAfter: '5 minutes'
+      retryAfter: '5 minutes',
     });
-  }
+  },
 });
 
 /**
@@ -78,8 +78,8 @@ export const speedLimiter = slowDown({
   },
   // Removed deprecated onLimitReached
   validate: {
-    delayMs: false // Disable delayMs validation warning
-  }
+    delayMs: false, // Disable delayMs validation warning
+  },
 });
 
 /**
@@ -91,7 +91,7 @@ export const authLimiter = rateLimit({
   message: {
     error: 'Too many authentication attempts',
     message: 'Too many login attempts. Try again later.',
-    retryAfter: '15 minutes'
+    retryAfter: '15 minutes',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -100,14 +100,14 @@ export const authLimiter = rateLimit({
     logger.warn('Authentication rate limit exceeded', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
-      endpoint: req.path
+      endpoint: req.path,
     });
     res.status(429).json({
       error: 'Too many authentication attempts',
       message: 'Too many login attempts. Try again later.',
-      retryAfter: '15 minutes'
+      retryAfter: '15 minutes',
     });
-  }
+  },
 });
 
 /**
@@ -118,8 +118,9 @@ export const weatherLimiter = rateLimit({
   max: 30, // 30 weather requests per 10 minutes
   message: {
     error: 'Weather API rate limit exceeded',
-    message: 'Too many weather requests. Please wait before making more requests.',
-    retryAfter: '10 minutes'
+    message:
+      'Too many weather requests. Please wait before making more requests.',
+    retryAfter: '10 minutes',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -131,14 +132,15 @@ export const weatherLimiter = rateLimit({
     logger.warn('Weather API rate limit exceeded', {
       identifier: req.user?.id ? `user:${req.user.id}` : req.ip,
       userId: req.user?.id,
-      endpoint: req.path
+      endpoint: req.path,
     });
     res.status(429).json({
       error: 'Weather API rate limit exceeded',
-      message: 'Too many weather requests. Please wait before making more requests.',
-      retryAfter: '10 minutes'
+      message:
+        'Too many weather requests. Please wait before making more requests.',
+      retryAfter: '10 minutes',
     });
-  }
+  },
 });
 
 /**
@@ -151,10 +153,10 @@ export const createCustomLimiter = (options = {}) => {
     max: 100,
     message: {
       error: 'Rate limit exceeded',
-      message: 'Too many requests. Try again later.'
+      message: 'Too many requests. Try again later.',
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
   };
 
   return rateLimit({
@@ -166,10 +168,10 @@ export const createCustomLimiter = (options = {}) => {
         endpoint: req.path,
         limiterName: options.name || 'custom',
         windowMs: options.windowMs || defaultOptions.windowMs,
-        max: options.max || defaultOptions.max
+        max: options.max || defaultOptions.max,
       });
       res.status(429).json(options.message || defaultOptions.message);
-    }
+    },
   });
 };
 
@@ -181,20 +183,22 @@ export const rateLimitStatus = (req, res, next) => {
   // This middleware can be used to add custom rate limit headers
   // or perform additional logging
   const originalSend = res.send;
-  
-  res.send = function(data) {
+
+  res.send = function (data) {
     // Add custom headers if needed
     if (req.rateLimit) {
       res.set({
         'X-Custom-RateLimit-Remaining': req.rateLimit.remaining,
-        'X-Custom-RateLimit-Reset': new Date(Date.now() + req.rateLimit.resetTime)
+        'X-Custom-RateLimit-Reset': new Date(
+          Date.now() + req.rateLimit.resetTime,
+        ),
       });
     }
-    
+
     // Call original send
     originalSend.call(this, data);
   };
-  
+
   next();
 };
 
@@ -205,12 +209,12 @@ export const rateLimitStatus = (req, res, next) => {
 export const createIPWhitelist = (whitelistedIPs = []) => {
   return (req, res, next) => {
     const clientIP = req.ip || req.connection.remoteAddress;
-    
+
     if (whitelistedIPs.includes(clientIP)) {
       logger.info('IP whitelisted - bypassing rate limits', { ip: clientIP });
       req.skipRateLimit = true;
     }
-    
+
     next();
   };
 };
@@ -220,21 +224,21 @@ export const rateLimiterConfigs = {
   general: {
     windowMs: 15 * 60 * 1000,
     max: 100,
-    message: 'General rate limit exceeded'
+    message: 'General rate limit exceeded',
   },
   mcp: {
     windowMs: 5 * 60 * 1000,
     max: 50,
-    message: 'MCP rate limit exceeded'
+    message: 'MCP rate limit exceeded',
   },
   weather: {
     windowMs: 10 * 60 * 1000,
     max: 30,
-    message: 'Weather API rate limit exceeded'
+    message: 'Weather API rate limit exceeded',
   },
   auth: {
     windowMs: 15 * 60 * 1000,
     max: 5,
-    message: 'Authentication rate limit exceeded'
-  }
+    message: 'Authentication rate limit exceeded',
+  },
 };

@@ -42,65 +42,86 @@ export function validateMCPRequest(requestBody) {
  */
 const endpointSchemas = {
   getWeather: Joi.object({
-    latitude: Joi.number().min(-90).max(90).precision(6).required()
-      .messages({
-        'number.min': 'Latitude must be between -90 and 90 degrees',
-        'number.max': 'Latitude must be between -90 and 90 degrees',
-        'any.required': 'Latitude is required for weather requests'
-      }),
-    longitude: Joi.number().min(-180).max(180).precision(6).required()
+    latitude: Joi.number().min(-90).max(90).precision(6).required().messages({
+      'number.min': 'Latitude must be between -90 and 90 degrees',
+      'number.max': 'Latitude must be between -90 and 90 degrees',
+      'any.required': 'Latitude is required for weather requests',
+    }),
+    longitude: Joi.number()
+      .min(-180)
+      .max(180)
+      .precision(6)
+      .required()
       .messages({
         'number.min': 'Longitude must be between -180 and 180 degrees',
         'number.max': 'Longitude must be between -180 and 180 degrees',
-        'any.required': 'Longitude is required for weather requests'
+        'any.required': 'Longitude is required for weather requests',
       }),
     current_weather: Joi.boolean().optional().default(true),
-    daily: Joi.string().pattern(/^[a-zA-Z0-9_,]+$/).optional()
+    daily: Joi.string()
+      .pattern(/^[a-zA-Z0-9_,]+$/)
+      .optional()
       .messages({
-        'string.pattern.base': 'Daily parameters must contain only alphanumeric characters, underscores, and commas'
+        'string.pattern.base':
+          'Daily parameters must contain only alphanumeric characters, underscores, and commas',
       }),
-    hourly: Joi.string().pattern(/^[a-zA-Z0-9_,]+$/).optional(),
+    hourly: Joi.string()
+      .pattern(/^[a-zA-Z0-9_,]+$/)
+      .optional(),
     timezone: Joi.string().min(1).max(50).optional(),
-    temperature_unit: Joi.string().valid('celsius', 'fahrenheit').optional().default('celsius'),
-    windspeed_unit: Joi.string().valid('kmh', 'ms', 'mph', 'kn').optional().default('kmh'),
-    precipitation_unit: Joi.string().valid('mm', 'inch').optional().default('mm'),
+    temperature_unit: Joi.string()
+      .valid('celsius', 'fahrenheit')
+      .optional()
+      .default('celsius'),
+    windspeed_unit: Joi.string()
+      .valid('kmh', 'ms', 'mph', 'kn')
+      .optional()
+      .default('kmh'),
+    precipitation_unit: Joi.string()
+      .valid('mm', 'inch')
+      .optional()
+      .default('mm'),
     start_date: Joi.date().iso().optional(),
     end_date: Joi.date().iso().min(Joi.ref('start_date')).optional(),
     past_days: Joi.number().min(0).max(92).optional(),
-    forecast_days: Joi.number().min(1).max(16).optional().default(7)
+    forecast_days: Joi.number().min(1).max(16).optional().default(7),
   }),
 
   getCurrentWeather: Joi.object({
     latitude: Joi.number().min(-90).max(90).precision(6).required(),
     longitude: Joi.number().min(-180).max(180).precision(6).required(),
-    temperature_unit: Joi.string().valid('celsius', 'fahrenheit').optional().default('celsius'),
-    windspeed_unit: Joi.string().valid('kmh', 'ms', 'mph', 'kn').optional().default('kmh')
+    temperature_unit: Joi.string()
+      .valid('celsius', 'fahrenheit')
+      .optional()
+      .default('celsius'),
+    windspeed_unit: Joi.string()
+      .valid('kmh', 'ms', 'mph', 'kn')
+      .optional()
+      .default('kmh'),
   }),
 
   getUsers: Joi.object({
-    _limit: Joi.number().min(1).max(100).optional().default(10)
-      .messages({
-        'number.min': 'Limit must be at least 1',
-        'number.max': 'Limit cannot exceed 100'
-      }),
+    _limit: Joi.number().min(1).max(100).optional().default(10).messages({
+      'number.min': 'Limit must be at least 1',
+      'number.max': 'Limit cannot exceed 100',
+    }),
     _page: Joi.number().min(1).optional().default(1),
     _sort: Joi.string().valid('id', 'name', 'username', 'email').optional(),
-    _order: Joi.string().valid('asc', 'desc').optional().default('asc')
+    _order: Joi.string().valid('asc', 'desc').optional().default('asc'),
   }),
 
   getPosts: Joi.object({
-    userId: Joi.number().min(1).max(10).optional()
-      .messages({
-        'number.min': 'User ID must be a positive number',
-        'number.max': 'User ID must be between 1 and 10'
-      }),
+    userId: Joi.number().min(1).max(10).optional().messages({
+      'number.min': 'User ID must be a positive number',
+      'number.max': 'User ID must be between 1 and 10',
+    }),
     _limit: Joi.number().min(1).max(100).optional().default(10),
     _page: Joi.number().min(1).optional().default(1),
     _sort: Joi.string().valid('id', 'title', 'userId').optional(),
     _order: Joi.string().valid('asc', 'desc').optional().default('asc'),
     title_like: Joi.string().min(1).max(100).optional(),
-    body_like: Joi.string().min(1).max(100).optional()
-  })
+    body_like: Joi.string().min(1).max(100).optional(),
+  }),
 };
 
 /**
@@ -111,12 +132,12 @@ const endpointSchemas = {
  */
 export function validateEndpointParams(endpointName, params) {
   const schema = endpointSchemas[endpointName];
-  
+
   if (!schema) {
-    return { 
-      error: null, 
+    return {
+      error: null,
       value: params,
-      warnings: [`No validation schema found for endpoint: ${endpointName}`]
+      warnings: [`No validation schema found for endpoint: ${endpointName}`],
     };
   }
 
@@ -124,25 +145,25 @@ export function validateEndpointParams(endpointName, params) {
     abortEarly: false,
     stripUnknown: true,
     allowUnknown: false,
-    convert: true
+    convert: true,
   });
 
   if (result.error) {
     return {
       error: result.error,
       value: null,
-      details: result.error.details.map(detail => ({
+      details: result.error.details.map((detail) => ({
         field: detail.path.join('.'),
         message: detail.message,
-        value: detail.context?.value
-      }))
+        value: detail.context?.value,
+      })),
     };
   }
 
   return {
     error: null,
     value: result.value,
-    sanitized: true
+    sanitized: true,
   };
 }
 
@@ -151,27 +172,29 @@ export function validateEndpointParams(endpointName, params) {
  */
 const authSchemas = {
   login: Joi.object({
-    username: Joi.string().alphanum().min(3).max(30).required()
-      .messages({
-        'string.alphanum': 'Username must contain only alphanumeric characters',
-        'string.min': 'Username must be at least 3 characters long',
-        'string.max': 'Username cannot exceed 30 characters'
-      }),
-    password: Joi.string().min(6).max(128).required()
-      .messages({
-        'string.min': 'Password must be at least 6 characters long',
-        'string.max': 'Password cannot exceed 128 characters'
-      }),
-    remember: Joi.boolean().optional().default(false)
+    username: Joi.string().alphanum().min(3).max(30).required().messages({
+      'string.alphanum': 'Username must contain only alphanumeric characters',
+      'string.min': 'Username must be at least 3 characters long',
+      'string.max': 'Username cannot exceed 30 characters',
+    }),
+    password: Joi.string().min(6).max(128).required().messages({
+      'string.min': 'Password must be at least 6 characters long',
+      'string.max': 'Password cannot exceed 128 characters',
+    }),
+    remember: Joi.boolean().optional().default(false),
   }),
 
   apiKey: Joi.object({
     name: Joi.string().min(3).max(50).required(),
-    permissions: Joi.array().items(
-      Joi.string().valid('read', 'write', 'admin')
-    ).optional().default(['read']),
-    expiresIn: Joi.string().valid('1h', '1d', '7d', '30d', '1y', 'never').optional().default('30d')
-  })
+    permissions: Joi.array()
+      .items(Joi.string().valid('read', 'write', 'admin'))
+      .optional()
+      .default(['read']),
+    expiresIn: Joi.string()
+      .valid('1h', '1d', '7d', '30d', '1y', 'never')
+      .optional()
+      .default('30d'),
+  }),
 };
 
 /**
@@ -182,7 +205,7 @@ const rateLimitSchema = Joi.object({
   max: Joi.number().min(1).max(10000).optional().default(100),
   message: Joi.string().max(200).optional(),
   skipSuccessfulRequests: Joi.boolean().optional().default(false),
-  skipFailedRequests: Joi.boolean().optional().default(false)
+  skipFailedRequests: Joi.boolean().optional().default(false),
 });
 
 /**
@@ -193,18 +216,18 @@ const rateLimitSchema = Joi.object({
  */
 export function validateAuthRequest(type, data) {
   const schema = authSchemas[type];
-  
+
   if (!schema) {
     return {
       error: new Error(`Unknown authentication type: ${type}`),
-      value: null
+      value: null,
     };
   }
 
   return schema.validate(data, {
     abortEarly: false,
     stripUnknown: true,
-    convert: true
+    convert: true,
   });
 }
 
@@ -217,7 +240,7 @@ export function validateRateLimitConfig(config) {
   return rateLimitSchema.validate(config, {
     abortEarly: false,
     stripUnknown: true,
-    convert: true
+    convert: true,
   });
 }
 
@@ -232,7 +255,7 @@ export function sanitizeInput(input, options = {}) {
     allowHtml = false,
     maxLength = 10000,
     allowedTags = [],
-    stripSql = true
+    stripSql = true,
   } = options;
 
   if (typeof input === 'string') {
@@ -258,7 +281,10 @@ export function sanitizeInput(input, options = {}) {
     if (stripSql) {
       sanitized = sanitized
         .replace(/['"`;\\]/g, '')
-        .replace(/\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b/gi, '');
+        .replace(
+          /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b/gi,
+          '',
+        );
     }
 
     // Remove control characters
@@ -268,7 +294,7 @@ export function sanitizeInput(input, options = {}) {
   }
 
   if (Array.isArray(input)) {
-    return input.map(item => sanitizeInput(item, options));
+    return input.map((item) => sanitizeInput(item, options));
   }
 
   if (typeof input === 'object' && input !== null) {
@@ -291,11 +317,11 @@ export function sanitizeInput(input, options = {}) {
 export function isValidIP(ip) {
   const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
   const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-  
+
   if (ipv4Regex.test(ip)) {
-    return ip.split('.').every(part => parseInt(part) <= 255);
+    return ip.split('.').every((part) => parseInt(part) <= 255);
   }
-  
+
   return ipv6Regex.test(ip);
 }
 
@@ -315,16 +341,23 @@ export function validateCoordinates(lat, lon) {
   }
   if (lon < -180 || lon > 180) {
     errors.push('Longitude must be between -180 and 180 degrees');
-  }  // Precision warnings (check first for specific precision issues)
+  } // Precision warnings (check first for specific precision issues)
   if (Math.abs(lat) <= 0.000001) {
     warnings.push('Latitude precision may be too high for weather data');
   }
   if (Math.abs(lon) <= 0.000001) {
     warnings.push('Longitude precision may be too high for weather data');
   }
-  // Ocean check (simplified) - only if no precision warnings about very small values  
-  if (Math.abs(lat) < 1 && Math.abs(lon) < 1 && Math.abs(lat) > 0.000001 && Math.abs(lon) > 0.000001) {
-    warnings.push('Coordinates appear to be near the equator/prime meridian intersection');
+  // Ocean check (simplified) - only if no precision warnings about very small values
+  if (
+    Math.abs(lat) < 1 &&
+    Math.abs(lon) < 1 &&
+    Math.abs(lat) > 0.000001 &&
+    Math.abs(lon) > 0.000001
+  ) {
+    warnings.push(
+      'Coordinates appear to be near the equator/prime meridian intersection',
+    );
   }
 
   return {
@@ -332,6 +365,6 @@ export function validateCoordinates(lat, lon) {
     errors,
     warnings,
     normalizedLat: Math.round(lat * 1000000) / 1000000, // 6 decimal places
-    normalizedLon: Math.round(lon * 1000000) / 1000000
+    normalizedLon: Math.round(lon * 1000000) / 1000000,
   };
 }

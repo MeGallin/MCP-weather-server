@@ -2,7 +2,8 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 
-const { combine, timestamp, printf, colorize, errors, json, metadata } = winston.format;
+const { combine, timestamp, printf, colorize, errors, json, metadata } =
+  winston.format;
 
 // Ensure logs directory exists
 const logsDir = 'logs';
@@ -11,76 +12,100 @@ if (!fs.existsSync(logsDir)) {
 }
 
 // Custom format for console output
-const consoleFormat = printf(({ level, message, timestamp, service, userId, endpoint, ip, ...meta }) => {
-  let logString = `${timestamp} [${level.toUpperCase()}]`;
-  
-  if (service) logString += ` [${service}]`;
-  if (userId) logString += ` [User:${userId}]`;
-  if (endpoint) logString += ` [${endpoint}]`;
-  if (ip) logString += ` [${ip}]`;
-  
-  logString += `: ${message}`;
-  
-  // Add metadata if present
-  const metaKeys = Object.keys(meta);
-  if (metaKeys.length > 0) {
-    logString += ` ${JSON.stringify(meta)}`;
-  }
-  
-  return logString;
-});
+const consoleFormat = printf(
+  ({ level, message, timestamp, service, userId, endpoint, ip, ...meta }) => {
+    let logString = `${timestamp} [${level.toUpperCase()}]`;
+
+    if (service) logString += ` [${service}]`;
+    if (userId) logString += ` [User:${userId}]`;
+    if (endpoint) logString += ` [${endpoint}]`;
+    if (ip) logString += ` [${ip}]`;
+
+    logString += `: ${message}`;
+
+    // Add metadata if present
+    const metaKeys = Object.keys(meta);
+    if (metaKeys.length > 0) {
+      logString += ` ${JSON.stringify(meta)}`;
+    }
+
+    return logString;
+  },
+);
 
 // Custom format for file output (structured JSON)
 const fileFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
   errors({ stack: true }),
   metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
-  json()
+  json(),
 );
 
 // Performance tracking format
 const performanceFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-  printf(({ timestamp, level, message, duration, endpoint, method, statusCode, ...meta }) => {
-    return JSON.stringify({
+  printf(
+    ({
       timestamp,
       level,
-      type: 'performance',
       message,
       duration,
       endpoint,
       method,
       statusCode,
       ...meta
-    });
-  })
+    }) => {
+      return JSON.stringify({
+        timestamp,
+        level,
+        type: 'performance',
+        message,
+        duration,
+        endpoint,
+        method,
+        statusCode,
+        ...meta,
+      });
+    },
+  ),
 );
 
 // Security events format
 const securityFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-  printf(({ timestamp, level, message, ip, userAgent, endpoint, action, ...meta }) => {
-    return JSON.stringify({
+  printf(
+    ({
       timestamp,
       level,
-      type: 'security',
       message,
       ip,
       userAgent,
       endpoint,
       action,
       ...meta
-    });
-  })
+    }) => {
+      return JSON.stringify({
+        timestamp,
+        level,
+        type: 'security',
+        message,
+        ip,
+        userAgent,
+        endpoint,
+        action,
+        ...meta,
+      });
+    },
+  ),
 );
 
 // Create the main logger
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  defaultMeta: { 
+  defaultMeta: {
     service: 'mcp-weather-server',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   },
   transports: [
     // Console transport for development
@@ -88,9 +113,9 @@ export const logger = winston.createLogger({
       format: combine(
         colorize({ all: true }),
         timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        consoleFormat
+        consoleFormat,
       ),
-      silent: process.env.NODE_ENV === 'test'
+      silent: process.env.NODE_ENV === 'test',
     }),
 
     // Combined logs file
@@ -99,7 +124,7 @@ export const logger = winston.createLogger({
       format: fileFormat,
       maxsize: 10485760, // 10MB
       maxFiles: 10,
-      tailable: true
+      tailable: true,
     }),
 
     // Error logs file
@@ -109,7 +134,7 @@ export const logger = winston.createLogger({
       format: fileFormat,
       maxsize: 10485760, // 10MB
       maxFiles: 5,
-      tailable: true
+      tailable: true,
     }),
 
     // Performance logs file
@@ -119,32 +144,32 @@ export const logger = winston.createLogger({
       format: performanceFormat,
       maxsize: 10485760, // 10MB
       maxFiles: 5,
-      tailable: true
-    })
+      tailable: true,
+    }),
   ],
-  
+
   // Handle uncaught exceptions and rejections
   exceptionHandlers: [
     new winston.transports.File({
       filename: path.join(logsDir, 'exceptions.log'),
-      format: fileFormat
-    })
+      format: fileFormat,
+    }),
   ],
-  
+
   rejectionHandlers: [
     new winston.transports.File({
       filename: path.join(logsDir, 'rejections.log'),
-      format: fileFormat
-    })
-  ]
+      format: fileFormat,
+    }),
+  ],
 });
 
 // Security logger for authentication and authorization events
 export const securityLogger = winston.createLogger({
   level: 'info',
-  defaultMeta: { 
+  defaultMeta: {
     service: 'mcp-weather-server-security',
-    version: '1.0.0'
+    version: '1.0.0',
   },
   transports: [
     new winston.transports.File({
@@ -152,17 +177,17 @@ export const securityLogger = winston.createLogger({
       format: securityFormat,
       maxsize: 10485760, // 10MB
       maxFiles: 10,
-      tailable: true
-    })
-  ]
+      tailable: true,
+    }),
+  ],
 });
 
 // Performance logger for API response times and metrics
 export const performanceLogger = winston.createLogger({
   level: 'info',
-  defaultMeta: { 
+  defaultMeta: {
     service: 'mcp-weather-server-performance',
-    version: '1.0.0'
+    version: '1.0.0',
   },
   transports: [
     new winston.transports.File({
@@ -170,9 +195,9 @@ export const performanceLogger = winston.createLogger({
       format: performanceFormat,
       maxsize: 10485760, // 10MB
       maxFiles: 5,
-      tailable: true
-    })
-  ]
+      tailable: true,
+    }),
+  ],
 });
 
 /**
@@ -191,7 +216,7 @@ export const logRequest = (req, res, duration) => {
     userId: req.user?.id,
     username: req.user?.username,
     contentLength: res.get('Content-Length'),
-    referer: req.get('Referer')
+    referer: req.get('Referer'),
   };
 
   if (res.statusCode >= 400) {
@@ -217,29 +242,36 @@ export const logSecurityEvent = (action, req, additionalData = {}) => {
     userId: req.user?.id,
     username: req.user?.username,
     timestamp: new Date().toISOString(),
-    ...additionalData
+    ...additionalData,
   };
 
   securityLogger.warn(`Security event: ${action}`, securityData);
-  
+
   // Also log to main logger for critical security events
-  if (['login_failed', 'rate_limit_exceeded', 'invalid_token'].includes(action)) {
+  if (
+    ['login_failed', 'rate_limit_exceeded', 'invalid_token'].includes(action)
+  ) {
     logger.warn(`Security alert: ${action}`, securityData);
   }
 };
 
 // API performance logging
-export const logAPIPerformance = (endpoint, duration, success, additionalData = {}) => {
+export const logAPIPerformance = (
+  endpoint,
+  duration,
+  success,
+  additionalData = {},
+) => {
   const perfData = {
     endpoint,
     duration,
     success,
     timestamp: new Date().toISOString(),
-    ...additionalData
+    ...additionalData,
   };
 
   performanceLogger.info('API performance metric', perfData);
-  
+
   // Log warnings for slow APIs
   if (duration > 5000) {
     logger.warn('Slow external API response', perfData);
@@ -254,7 +286,7 @@ export const logError = (error, context = {}) => {
     code: error.code,
     statusCode: error.statusCode || error.status,
     timestamp: new Date().toISOString(),
-    ...context
+    ...context,
   };
 
   logger.error('Application error occurred', errorData);
@@ -270,11 +302,14 @@ export const logRateLimit = (req, limiterName, remaining, resetTime) => {
     remaining,
     resetTime,
     userAgent: req.get('User-Agent'),
-    userId: req.user?.id
+    userId: req.user?.id,
   };
 
   logger.warn('Rate limit applied', rateLimitData);
-  logSecurityEvent('rate_limit_applied', req, { limiter: limiterName, remaining });
+  logSecurityEvent('rate_limit_applied', req, {
+    limiter: limiterName,
+    remaining,
+  });
 };
 
 // Authentication logging
@@ -286,7 +321,7 @@ export const logAuth = (action, req, success, additionalData = {}) => {
     userAgent: req.get('User-Agent'),
     endpoint: req.path,
     timestamp: new Date().toISOString(),
-    ...additionalData
+    ...additionalData,
   };
 
   if (success) {

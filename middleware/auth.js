@@ -10,15 +10,15 @@ const users = [
     username: 'admin',
     password: '$2a$10$xyz...', // This would be a real bcrypt hash
     role: 'admin',
-    apiKey: 'mcp-admin-key-12345'
+    apiKey: 'mcp-admin-key-12345',
   },
   {
     id: 2,
     username: 'user',
     password: '$2a$10$abc...', // This would be a real bcrypt hash
     role: 'user',
-    apiKey: 'mcp-user-key-67890'
-  }
+    apiKey: 'mcp-user-key-67890',
+  },
 ];
 
 /**
@@ -32,30 +32,33 @@ export const authenticateJWT = (req, res, next) => {
   if (!token) {
     logger.warn('Authentication failed: No token provided', {
       ip: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
     return res.status(401).json({
       error: 'Access denied',
-      message: 'No token provided'
+      message: 'No token provided',
     });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || 'your-secret-key',
+    );
     req.user = decoded;
     logger.info('User authenticated successfully', {
       userId: decoded.id,
-      username: decoded.username
+      username: decoded.username,
     });
     next();
   } catch (err) {
     logger.warn('Authentication failed: Invalid token', {
       ip: req.ip,
-      error: err.message
+      error: err.message,
     });
     return res.status(403).json({
       error: 'Invalid token',
-      message: 'Token verification failed'
+      message: 'Token verification failed',
     });
   }
 };
@@ -70,38 +73,38 @@ export const authenticateAPIKey = (req, res, next) => {
   if (!apiKey) {
     logger.warn('API Key authentication failed: No API key provided', {
       ip: req.ip,
-      endpoint: req.path
+      endpoint: req.path,
     });
     return res.status(401).json({
       error: 'Access denied',
-      message: 'API key required'
+      message: 'API key required',
     });
   }
 
   // Find user by API key
-  const user = users.find(u => u.apiKey === apiKey);
-  
+  const user = users.find((u) => u.apiKey === apiKey);
+
   if (!user) {
     logger.warn('API Key authentication failed: Invalid API key', {
       ip: req.ip,
-      apiKey: apiKey.substring(0, 8) + '***' // Log partial key for security
+      apiKey: apiKey.substring(0, 8) + '***', // Log partial key for security
     });
     return res.status(403).json({
       error: 'Invalid API key',
-      message: 'API key not found or inactive'
+      message: 'API key not found or inactive',
     });
   }
 
   req.user = {
     id: user.id,
     username: user.username,
-    role: user.role
+    role: user.role,
   };
 
   logger.info('API Key authentication successful', {
     userId: user.id,
     username: user.username,
-    endpoint: req.path
+    endpoint: req.path,
   });
 
   next();
@@ -119,22 +122,31 @@ export const optionalAuth = (req, res, next) => {
     // Try JWT authentication
     const token = authHeader.split(' ')[1];
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'your-secret-key',
+      );
       req.user = decoded;
-      logger.info('Optional authentication: JWT successful', { userId: decoded.id });
+      logger.info('Optional authentication: JWT successful', {
+        userId: decoded.id,
+      });
     } catch (err) {
-      logger.debug('Optional authentication: JWT failed', { error: err.message });
+      logger.debug('Optional authentication: JWT failed', {
+        error: err.message,
+      });
     }
   } else if (apiKey) {
     // Try API key authentication
-    const user = users.find(u => u.apiKey === apiKey);
+    const user = users.find((u) => u.apiKey === apiKey);
     if (user) {
       req.user = {
         id: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
       };
-      logger.info('Optional authentication: API key successful', { userId: user.id });
+      logger.info('Optional authentication: API key successful', {
+        userId: user.id,
+      });
     } else {
       logger.debug('Optional authentication: API key failed');
     }
@@ -153,24 +165,28 @@ export const requireRole = (roles) => {
     if (!req.user) {
       return res.status(401).json({
         error: 'Authentication required',
-        message: 'Please authenticate first'
+        message: 'Please authenticate first',
       });
     }
 
-    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const userRoles = Array.isArray(req.user.role)
+      ? req.user.role
+      : [req.user.role];
     const requiredRoles = Array.isArray(roles) ? roles : [roles];
 
-    const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+    const hasRequiredRole = requiredRoles.some((role) =>
+      userRoles.includes(role),
+    );
 
     if (!hasRequiredRole) {
       logger.warn('Authorization failed: Insufficient permissions', {
         userId: req.user.id,
         userRoles,
-        requiredRoles
+        requiredRoles,
       });
       return res.status(403).json({
         error: 'Insufficient permissions',
-        message: `Required roles: ${requiredRoles.join(', ')}`
+        message: `Required roles: ${requiredRoles.join(', ')}`,
       });
     }
 
@@ -186,10 +202,10 @@ export const generateToken = (user) => {
     {
       id: user.id,
       username: user.username,
-      role: user.role
+      role: user.role,
     },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '24h' }
+    { expiresIn: '24h' },
   );
 };
 
@@ -212,20 +228,21 @@ export const comparePassword = async (password, hash) => {
  */
 export const authenticateUser = async (username, password) => {
   try {
-    const user = users.find(u => u.username === username);
+    const user = users.find((u) => u.username === username);
     if (!user) {
       return null;
     }
 
     // In a real application, you would compare with bcrypt
     // For demo purposes, we'll do a simple comparison
-    const isValid = user.password === password || 
-                   await comparePassword(password, user.password);
-    
+    const isValid =
+      user.password === password ||
+      (await comparePassword(password, user.password));
+
     if (isValid) {
       return user;
     }
-    
+
     return null;
   } catch (error) {
     logger.error('Authentication error:', error);
@@ -236,7 +253,11 @@ export const authenticateUser = async (username, password) => {
 /**
  * Generate API key for user
  */
-export const generateApiKey = (user, keyName = 'default', permissions = ['read']) => {
+export const generateApiKey = (
+  user,
+  keyName = 'default',
+  permissions = ['read'],
+) => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2);
   return `mcp-${user.role}-${user.id}-${timestamp}-${random}`;
@@ -258,17 +279,17 @@ export const login = async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Username and password are required'
+        message: 'Username and password are required',
       });
     }
 
     // Find user
-    const user = users.find(u => u.username === username);
+    const user = users.find((u) => u.username === username);
     if (!user) {
       logger.warn('Login failed: User not found', { username });
       return res.status(401).json({
         error: 'Authentication failed',
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
       });
     }
 
@@ -280,7 +301,7 @@ export const login = async (req, res) => {
       logger.warn('Login failed: Invalid password', { username });
       return res.status(401).json({
         error: 'Authentication failed',
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
       });
     }
 
@@ -289,7 +310,7 @@ export const login = async (req, res) => {
 
     logger.info('User logged in successfully', {
       userId: user.id,
-      username: user.username
+      username: user.username,
     });
 
     res.json({
@@ -298,14 +319,14 @@ export const login = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   } catch (error) {
     logger.error('Login error:', error);
     res.status(500).json({
       error: 'Internal server error',
-      message: 'Login failed'
+      message: 'Login failed',
     });
   }
 };

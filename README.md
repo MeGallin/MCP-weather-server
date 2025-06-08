@@ -9,14 +9,16 @@ The MCP Weather Server acts as a secure, high-performance bridge between MCP-com
 ## 🚀 Features
 
 ### Phase 1 (Core Implementation)
+
 - ✅ **MCP Protocol Compliance**: Fully implements MCP standard for tool results
-- 🌤️ **Weather Data Integration**: Built-in support for Open-Meteo weather API  
+- 🌤️ **Weather Data Integration**: Built-in support for Open-Meteo weather API
 - 🔧 **Extensible Architecture**: Easy to add new API endpoints
 - 🛡️ **Security Headers**: Helmet.js integration for security
 - 📊 **Basic Logging**: Winston-based logging system
 - ⚡ **Performance Optimized**: Handles concurrent requests efficiently
 
 ### Phase 2 (Enhanced Features)
+
 - 🔐 **Authentication System**: JWT tokens and API key authentication
 - 🚦 **Advanced Rate Limiting**: Multi-tier rate limiting with different rules
 - 📋 **Comprehensive Validation**: Joi-based input validation with sanitization
@@ -36,23 +38,27 @@ The MCP Weather Server acts as a secure, high-performance bridge between MCP-com
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd MCP-weather-server
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Configure environment:
+
 ```bash
 cp .env.example .env
 # Edit .env file with your configuration
 ```
 
 4. Start the server:
+
 ```bash
 npm start
 ```
@@ -86,6 +92,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -117,6 +124,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -222,10 +230,11 @@ Content-Type: application/json
 The server implements multiple rate limiting tiers:
 
 - **General Endpoints**: 100 requests per 15 minutes
-- **MCP Endpoint**: 30 requests per minute  
+- **MCP Endpoint**: 30 requests per minute
 - **Authentication**: 5 requests per 15 minutes
 
 Rate limit headers are included in responses:
+
 - `RateLimit-Limit`: Maximum requests allowed
 - `RateLimit-Remaining`: Remaining requests in window
 - `RateLimit-Reset`: Time when rate limit resets
@@ -244,7 +253,7 @@ npm test
 # Unit tests only
 npm run test:unit
 
-# Integration tests only  
+# Integration tests only
 npm run test:integration
 
 # With coverage report
@@ -272,7 +281,7 @@ NODE_ENV=development
 JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=24h
 
-# Rate Limiting  
+# Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 MCP_RATE_LIMIT_WINDOW_MS=60000
@@ -311,7 +320,7 @@ The server generates multiple log files:
 ### Log Levels
 
 - **error**: Error conditions
-- **warn**: Warning conditions  
+- **warn**: Warning conditions
 - **info**: Informational messages
 - **debug**: Debug-level messages
 
@@ -324,6 +333,95 @@ The server generates multiple log files:
 - **Security Headers**: Helmet.js integration
 - **Authentication**: JWT and API key support
 - **CORS**: Configurable cross-origin resource sharing
+
+## 🔌 VS Code MCP Integration
+
+### MCP Stdio Server
+
+The weather server includes a Model Context Protocol (MCP) stdio transport wrapper for direct integration with VS Code and other MCP-compatible clients.
+
+#### Quick Setup
+
+1. **Start the MCP stdio server:**
+
+   ```bash
+   npm run mcp
+   ```
+
+2. **Configure VS Code:**
+   Add the following to your VS Code `settings.json`:
+   ```json
+   {
+     "mcpServers": {
+       "weather-server": {
+         "command": "node",
+         "args": ["mcp-weather-stdio.js"],
+         "cwd": "/path/to/your/MCP-weather-server",
+         "env": {
+           "NODE_ENV": "development"
+         }
+       }
+     }
+   }
+   ```
+
+#### Available MCP Tools
+
+The MCP server exposes three weather tools:
+
+- **`get-current-weather`**: Get current weather conditions for a location
+- **`get-weather-forecast`**: Get weather forecast (1-5 days) for a location
+- **`get-weather-alerts`**: Get weather alerts and warnings for a location
+
+#### Example Tool Usage
+
+```json
+{
+  "name": "get-current-weather",
+  "arguments": {
+    "location": "New York, NY",
+    "units": "metric"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "location": "New York, NY",
+  "current": {
+    "temperature": 22,
+    "humidity": 65,
+    "windSpeed": 10,
+    "condition": "Partly Cloudy"
+  },
+  "units": "metric",
+  "timestamp": "2025-06-08T..."
+}
+```
+
+#### Verification
+
+Test the MCP server setup:
+
+```bash
+node verify-mcp.js
+```
+
+This will verify that:
+
+- ✅ MCP server module loads correctly
+- ✅ All weather tools are available
+- ✅ Server is ready for VS Code integration
+
+#### Configuration Files
+
+- `vscode-settings-example.json` - Example VS Code configuration
+- `mcp-weather-stdio.js` - MCP stdio transport server
+- `verify-mcp.js` - Setup verification script
+
+---
 
 ## Contributing
 
@@ -347,6 +445,7 @@ For issues and questions:
 - Verify endpoint configurations
 
 ## Current Status
+
 ✅ **Phase 2 Complete**: All major features implemented and tested
 ✅ **Test Suite**: 94 tests passing (100% success rate)
 ✅ **Production Ready**: Comprehensive validation, security, and logging

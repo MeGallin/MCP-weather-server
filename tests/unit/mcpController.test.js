@@ -1,4 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 
@@ -16,8 +23,8 @@ jest.unstable_mockModule('axios', () => ({
     put: mockPut,
     delete: mockDelete,
     create: mockCreate,
-    defaults: { headers: {} }
-  }
+    defaults: { headers: {} },
+  },
 }));
 
 // Mock logger
@@ -26,10 +33,10 @@ jest.mock('../../utils/logger.js', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    debug: jest.fn()
+    debug: jest.fn(),
   },
   logAuth: jest.fn(),
-  logAPIPerformance: jest.fn()
+  logAPIPerformance: jest.fn(),
 }));
 
 // Import controller AFTER mocks
@@ -43,7 +50,7 @@ describe('MCP Controller', () => {
     app = express();
     app.use(express.json());
     app.post('/mcp', mcpControllerDefault.handleMCPRequest);
-    
+
     // Clear all mocks
     jest.clearAllMocks();
   });
@@ -56,21 +63,21 @@ describe('MCP Controller', () => {
     test('should handle valid weather request', async () => {
       const mockWeatherData = {
         latitude: 40.7128,
-        longitude: -74.0060,
+        longitude: -74.006,
         timezone: 'America/New_York',
         current_weather: {
           temperature: 22.5,
           windspeed: 10.2,
           winddirection: 180,
           weathercode: 3,
-          time: '2025-06-08T14:00'
+          time: '2025-06-08T14:00',
         },
         daily: {
           time: ['2025-06-08', '2025-06-09'],
           temperature_2m_max: [25.0, 23.0],
           temperature_2m_min: [18.0, 16.0],
-          weathercode: [3, 1]
-        }
+          weathercode: [3, 1],
+        },
       };
 
       mockGet.mockResolvedValue({ data: mockWeatherData });
@@ -80,11 +87,11 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
+            longitude: -74.006,
+          },
         },
         tools: [],
-        metadata: {}
+        metadata: {},
       };
 
       const response = await request(app)
@@ -94,15 +101,17 @@ describe('MCP Controller', () => {
 
       // Check if mockGet was called
       expect(mockGet).toHaveBeenCalled();
-      
+
       expect(response.body).toHaveProperty('input');
       expect(response.body).toHaveProperty('tools');
       expect(response.body).toHaveProperty('metadata');
-      
+
       expect(response.body.tools).toHaveLength(1);
       expect(response.body.tools[0].name).toBe('fetch_endpoint');
       expect(response.body.tools[0].output.success).toBe(true);
-      expect(response.body.tools[0].output.data.location.latitude).toBe(40.7128);
+      expect(response.body.tools[0].output.data.location.latitude).toBe(
+        40.7128,
+      );
     });
 
     test('should handle getCurrentWeather request', async () => {
@@ -115,8 +124,8 @@ describe('MCP Controller', () => {
           windspeed: 8.7,
           winddirection: 220,
           weathercode: 1,
-          time: '2025-06-08T14:00'
-        }
+          time: '2025-06-08T14:00',
+        },
       };
 
       mockGet.mockResolvedValue({ data: mockCurrentWeather });
@@ -126,9 +135,9 @@ describe('MCP Controller', () => {
           endpointName: 'getCurrentWeather',
           queryParams: {
             latitude: 51.5074,
-            longitude: -0.1278
-          }
-        }
+            longitude: -0.1278,
+          },
+        },
       };
 
       const response = await request(app)
@@ -136,7 +145,9 @@ describe('MCP Controller', () => {
         .send(mcpRequest)
         .expect(200);
 
-      expect(response.body.tools[0].output.data.location.latitude).toBe(51.5074);
+      expect(response.body.tools[0].output.data.location.latitude).toBe(
+        51.5074,
+      );
       expect(response.body.tools[0].output.data.current.temperature).toBe(18.5);
     });
 
@@ -146,22 +157,22 @@ describe('MCP Controller', () => {
           id: 1,
           name: 'John Doe',
           email: 'john@example.com',
-          address: { city: 'New York' }
+          address: { city: 'New York' },
         },
         {
           id: 2,
           name: 'Jane Smith',
           email: 'jane@example.com',
-          address: { city: 'London' }
-        }
+          address: { city: 'London' },
+        },
       ];
 
       mockGet.mockResolvedValue({ data: mockUsers });
 
       const mcpRequest = {
         input: {
-          endpointName: 'getUsers'
-        }
+          endpointName: 'getUsers',
+        },
       };
 
       const response = await request(app)
@@ -180,16 +191,16 @@ describe('MCP Controller', () => {
           id: 1,
           title: 'Test Post',
           body: 'Test content',
-          userId: 1
-        }
+          userId: 1,
+        },
       ];
 
       mockGet.mockResolvedValue({ data: mockPosts });
 
       const mcpRequest = {
         input: {
-          endpointName: 'getPosts'
-        }
+          endpointName: 'getPosts',
+        },
       };
 
       const response = await request(app)
@@ -203,8 +214,8 @@ describe('MCP Controller', () => {
     test('should merge default parameters with query parameters', async () => {
       const mockWeatherData = {
         latitude: 40.7128,
-        longitude: -74.0060,
-        current_weather: { temperature: 22.5 }
+        longitude: -74.006,
+        current_weather: { temperature: 22.5 },
       };
 
       mockGet.mockResolvedValue({ data: mockWeatherData });
@@ -214,16 +225,13 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060,
-            temperature_unit: 'fahrenheit'
-          }
-        }
+            longitude: -74.006,
+            temperature_unit: 'fahrenheit',
+          },
+        },
       };
 
-      await request(app)
-        .post('/mcp')
-        .send(mcpRequest)
-        .expect(200);
+      await request(app).post('/mcp').send(mcpRequest).expect(200);
 
       // Verify that axios was called with merged parameters
       expect(mockGet).toHaveBeenCalledWith(
@@ -231,12 +239,12 @@ describe('MCP Controller', () => {
         expect.objectContaining({
           params: expect.objectContaining({
             latitude: 40.7128,
-            longitude: -74.0060,
+            longitude: -74.006,
             current_weather: true, // from default params
             daily: 'temperature_2m_max,temperature_2m_min,weathercode', // from default params
-            temperature_unit: 'fahrenheit' // from query params
-          })
-        })
+            temperature_unit: 'fahrenheit', // from query params
+          }),
+        }),
       );
     });
 
@@ -246,8 +254,8 @@ describe('MCP Controller', () => {
           id: 1,
           name: 'Test User',
           email: 'test@example.com',
-          address: { city: 'Test City' }
-        }
+          address: { city: 'Test City' },
+        },
       ];
       mockGet.mockResolvedValue({ data: mockData });
 
@@ -255,27 +263,25 @@ describe('MCP Controller', () => {
         input: {
           endpointName: 'getUsers',
           authHeaders: {
-            'Authorization': 'Bearer test-token',
-            'X-API-Key': 'test-key'
-          }
-        }
+            Authorization: 'Bearer test-token',
+            'X-API-Key': 'test-key',
+          },
+        },
       };
 
-      const response = await request(app)
-        .post('/mcp')
-        .send(mcpRequest);
-      
+      const response = await request(app).post('/mcp').send(mcpRequest);
+
       expect(response.status).toBe(200);
 
       expect(mockGet).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Authorization': 'Bearer test-token',
+            Authorization: 'Bearer test-token',
             'X-API-Key': 'test-key',
-            'User-Agent': 'MCP-Weather-Server/1.0.0'
-          })
-        })
+            'User-Agent': 'MCP-Weather-Server/1.0.0',
+          }),
+        }),
       );
     });
   });
@@ -285,7 +291,7 @@ describe('MCP Controller', () => {
       const invalidRequest = {
         // Missing required 'input' field
         tools: [],
-        metadata: {}
+        metadata: {},
       };
 
       const response = await request(app)
@@ -301,8 +307,8 @@ describe('MCP Controller', () => {
       const invalidRequest = {
         input: {
           endpointName: 'nonexistentEndpoint', // Invalid endpointName
-          queryParams: {}
-        }
+          queryParams: {},
+        },
       };
 
       const response = await request(app)
@@ -317,8 +323,8 @@ describe('MCP Controller', () => {
     test('should reject unknown endpoint', async () => {
       const invalidRequest = {
         input: {
-          endpointName: 'unknownEndpoint'
-        }
+          endpointName: 'unknownEndpoint',
+        },
       };
 
       const response = await request(app)
@@ -334,7 +340,7 @@ describe('MCP Controller', () => {
     test('should handle external API timeout', async () => {
       const timeoutError = new Error('Request timeout');
       timeoutError.code = 'ECONNABORTED';
-      
+
       mockGet.mockRejectedValue(timeoutError);
 
       const mcpRequest = {
@@ -342,9 +348,9 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
-        }
+            longitude: -74.006,
+          },
+        },
       };
 
       const response = await request(app)
@@ -360,9 +366,9 @@ describe('MCP Controller', () => {
       const apiError = new Error('API Error');
       apiError.response = {
         status: 503,
-        statusText: 'Service Unavailable'
+        statusText: 'Service Unavailable',
       };
-      
+
       mockGet.mockRejectedValue(apiError);
 
       const mcpRequest = {
@@ -370,9 +376,9 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
-        }
+            longitude: -74.006,
+          },
+        },
       };
 
       const response = await request(app)
@@ -393,9 +399,9 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
-        }
+            longitude: -74.006,
+          },
+        },
       };
 
       const response = await request(app)
@@ -422,21 +428,21 @@ describe('MCP Controller', () => {
     test('should transform weather data correctly', async () => {
       const mockWeatherData = {
         latitude: 40.7128,
-        longitude: -74.0060,
+        longitude: -74.006,
         timezone: 'America/New_York',
         current_weather: {
           temperature: 22.5,
           windspeed: 10.2,
           winddirection: 180,
           weathercode: 3,
-          time: '2025-06-08T14:00'
+          time: '2025-06-08T14:00',
         },
         daily: {
           time: ['2025-06-08', '2025-06-09'],
           temperature_2m_max: [25.0, 23.0],
           temperature_2m_min: [18.0, 16.0],
-          weathercode: [3, 1]
-        }
+          weathercode: [3, 1],
+        },
       };
 
       mockGet.mockResolvedValue({ data: mockWeatherData });
@@ -446,9 +452,9 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
-        }
+            longitude: -74.006,
+          },
+        },
       };
 
       const response = await request(app)
@@ -457,14 +463,17 @@ describe('MCP Controller', () => {
         .expect(200);
 
       const transformedData = response.body.tools[0].output.data;
-      
+
       expect(transformedData).toHaveProperty('location');
       expect(transformedData).toHaveProperty('current');
       expect(transformedData).toHaveProperty('forecast');
-      
+
       expect(transformedData.location.latitude).toBe(40.7128);
       expect(transformedData.current.temperature).toBe(22.5);
-      expect(transformedData.forecast.dates).toEqual(['2025-06-08', '2025-06-09']);
+      expect(transformedData.forecast.dates).toEqual([
+        '2025-06-08',
+        '2025-06-09',
+      ]);
     });
 
     test('should transform user data correctly', async () => {
@@ -475,21 +484,21 @@ describe('MCP Controller', () => {
           email: 'john@example.com',
           username: 'john_doe',
           phone: '123-456-7890',
-          address: { 
+          address: {
             city: 'New York',
             street: '123 Main St',
-            zipcode: '10001'
+            zipcode: '10001',
           },
-          company: { name: 'ACME Corp' }
-        }
+          company: { name: 'ACME Corp' },
+        },
       ];
 
       mockGet.mockResolvedValue({ data: mockUsers });
 
       const mcpRequest = {
         input: {
-          endpointName: 'getUsers'
-        }
+          endpointName: 'getUsers',
+        },
       };
 
       const response = await request(app)
@@ -498,14 +507,14 @@ describe('MCP Controller', () => {
         .expect(200);
 
       const transformedData = response.body.tools[0].output.data;
-      
+
       expect(transformedData[0]).toEqual({
         id: 1,
         name: 'John Doe',
         email: 'john@example.com',
-        city: 'New York'
+        city: 'New York',
       });
-      
+
       // Verify that unnecessary fields are filtered out
       expect(transformedData[0]).not.toHaveProperty('username');
       expect(transformedData[0]).not.toHaveProperty('phone');
@@ -519,16 +528,16 @@ describe('MCP Controller', () => {
           id: 1,
           title: 'Test Post',
           body: 'Test content',
-          userId: 1
-        }
+          userId: 1,
+        },
       ];
 
       mockGet.mockResolvedValue({ data: mockPosts });
 
       const mcpRequest = {
         input: {
-          endpointName: 'getPosts'
-        }
+          endpointName: 'getPosts',
+        },
       };
 
       const response = await request(app)
@@ -543,8 +552,8 @@ describe('MCP Controller', () => {
 
   describe('Performance and Timeout', () => {
     test('should respect timeout configuration', async () => {
-      mockGet.mockImplementation(() => 
-        new Promise(resolve => setTimeout(resolve, 15000))
+      mockGet.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 15000)),
       );
 
       const mcpRequest = {
@@ -552,79 +561,78 @@ describe('MCP Controller', () => {
           endpointName: 'getWeather',
           queryParams: {
             latitude: 40.7128,
-            longitude: -74.0060
-          }
-        }
+            longitude: -74.006,
+          },
+        },
       };
 
       // The request should timeout (configured for 10 seconds)
       // Note: In a real test, this would timeout, but mocked axios won't actually timeout
-      await request(app)
-        .post('/mcp')
-        .send(mcpRequest);
+      await request(app).post('/mcp').send(mcpRequest);
 
       // Verify timeout was set in axios config
       expect(mockGet).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          timeout: 10000
-        })
+          timeout: 10000,
+        }),
       );
     }, 20000); // 20 second timeout for this test
 
     test('should include User-Agent header', async () => {
-      mockGet.mockResolvedValue({ data: [
-        {
-          id: 1,
-          name: 'Test User',
-          email: 'test@example.com',
-          address: { city: 'Test City' }
-        }
-      ] });
+      mockGet.mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            name: 'Test User',
+            email: 'test@example.com',
+            address: { city: 'Test City' },
+          },
+        ],
+      });
 
       const mcpRequest = {
         input: {
-          endpointName: 'getUsers'
-        }
+          endpointName: 'getUsers',
+        },
       };
 
-      await request(app)
-        .post('/mcp')
-        .send(mcpRequest)
-        .expect(200);
+      await request(app).post('/mcp').send(mcpRequest).expect(200);
 
       expect(mockGet).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'User-Agent': 'MCP-Weather-Server/1.0.0'
-          })
-        })
+            'User-Agent': 'MCP-Weather-Server/1.0.0',
+          }),
+        }),
       );
     });
   });
 
   describe('Context Preservation', () => {
     test('should preserve original input in response', async () => {
-      mockGet.mockResolvedValue({ data: [
-        {
-          id: 1,
-          name: 'Test User',
-          email: 'test@example.com',
-          address: { city: 'Test City' }
-        }
-      ] });
+      mockGet.mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            name: 'Test User',
+            email: 'test@example.com',
+            address: { city: 'Test City' },
+          },
+        ],
+      });
 
       const originalInput = {
         endpointName: 'getUsers',
         queryParams: { _limit: 5 },
-        customField: 'preserved'
+        customField: 'preserved',
       };
 
       const mcpRequest = {
         input: originalInput,
         tools: [],
-        metadata: { session: 'test' }
+        metadata: { session: 'test' },
       };
 
       const response = await request(app)
@@ -636,34 +644,36 @@ describe('MCP Controller', () => {
     });
 
     test('should preserve existing tools and metadata', async () => {
-      mockGet.mockResolvedValue({ data: [
-        {
-          id: 1,
-          name: 'Test User',
-          email: 'test@example.com',
-          address: { city: 'Test City' }
-        }
-      ] });
+      mockGet.mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            name: 'Test User',
+            email: 'test@example.com',
+            address: { city: 'Test City' },
+          },
+        ],
+      });
 
       const existingTools = [
         {
           name: 'previous_tool',
           output: { data: 'previous' },
-          timestamp: '2025-06-08T10:00:00Z'
-        }
+          timestamp: '2025-06-08T10:00:00Z',
+        },
       ];
 
       const existingMetadata = {
         session_id: 'test-session',
-        user_id: 'test-user'
+        user_id: 'test-user',
       };
 
       const mcpRequest = {
         input: {
-          endpointName: 'getUsers'
+          endpointName: 'getUsers',
         },
         tools: existingTools,
-        metadata: existingMetadata
+        metadata: existingMetadata,
       };
 
       const response = await request(app)
@@ -674,7 +684,7 @@ describe('MCP Controller', () => {
       expect(response.body.tools).toHaveLength(2);
       expect(response.body.tools[0]).toMatchObject({
         name: existingTools[0].name,
-        output: existingTools[0].output
+        output: existingTools[0].output,
       });
       expect(response.body.tools[0].timestamp).toMatch(/2025-06-08T10:00:00/);
       expect(response.body.metadata.session_id).toBe('test-session');

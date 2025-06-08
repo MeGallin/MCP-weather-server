@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { buildMCPResponse } from '../utils/mcpUtils.js';
-import { validateMCPRequest, validateAuthRequest } from '../utils/validation.js';
+import {
+  validateMCPRequest,
+  validateAuthRequest,
+} from '../utils/validation.js';
 import endpoints from '../config/endpoints.js';
 import { logger, logAuth, logAPIPerformance } from '../utils/logger.js';
-import { authenticateUser, generateToken, generateApiKey } from '../middleware/auth.js';
+import {
+  authenticateUser,
+  generateToken,
+  generateApiKey,
+} from '../middleware/auth.js';
 
 export default {
   async handleMCPRequest(req, res) {
@@ -62,13 +69,14 @@ export default {
       );
 
       logger.info(`Successfully processed MCP request for: ${endpointName}`);
-      res.json(updatedContext);    } catch (err) {
+      res.json(updatedContext);
+    } catch (err) {
       logger.error('Error processing MCP request:', {
         message: err.message,
         code: err.code,
         status: err.response?.status,
         statusText: err.response?.statusText,
-        url: err.config?.url
+        url: err.config?.url,
       });
 
       if (err.code === 'ECONNABORTED') {
@@ -98,7 +106,7 @@ export default {
   async handleLogin(req, res) {
     try {
       const startTime = Date.now();
-      
+
       // Validate login request
       const { error, value: authData } = validateAuthRequest(req.body, 'login');
       if (error) {
@@ -117,13 +125,13 @@ export default {
         logAuth('LOGIN_FAILED', req.ip, username, 'Invalid credentials');
         return res.status(401).json({
           error: 'Authentication failed',
-          message: 'Invalid username or password'
+          message: 'Invalid username or password',
         });
       }
 
       // Generate JWT token
       const token = generateToken(user);
-      
+
       logAuth('LOGIN_SUCCESS', req.ip, username, 'User logged in successfully');
       logAPIPerformance('AUTH_LOGIN', Date.now() - startTime, 'success');
 
@@ -134,18 +142,17 @@ export default {
         user: {
           id: user.id,
           username: user.username,
-          role: user.role
+          role: user.role,
         },
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h',
       });
-
     } catch (err) {
       logger.error('Login error:', err);
       logAuth('LOGIN_ERROR', req.ip, req.body?.username, err.message);
-      
+
       res.status(500).json({
         error: 'Internal server error',
-        message: 'Login failed due to server error'
+        message: 'Login failed due to server error',
       });
     }
   },
@@ -156,7 +163,7 @@ export default {
   async handleApiKeyGeneration(req, res) {
     try {
       const startTime = Date.now();
-      
+
       // Validate API key request
       const { error, value: keyData } = validateAuthRequest(req.body, 'apiKey');
       if (error) {
@@ -171,8 +178,13 @@ export default {
 
       // Generate new API key
       const apiKey = generateApiKey(user, keyName, permissions);
-      
-      logAuth('API_KEY_GENERATED', req.ip, user.username, `Generated API key: ${keyName}`);
+
+      logAuth(
+        'API_KEY_GENERATED',
+        req.ip,
+        user.username,
+        `Generated API key: ${keyName}`,
+      );
       logAPIPerformance('AUTH_API_KEY', Date.now() - startTime, 'success');
 
       res.json({
@@ -183,17 +195,16 @@ export default {
           name: keyName,
           permissions: permissions || ['read'],
           createdAt: new Date().toISOString(),
-          expiresAt: null // API keys don't expire by default
+          expiresAt: null, // API keys don't expire by default
         },
-        warning: 'Store this API key securely. It will not be shown again.'
+        warning: 'Store this API key securely. It will not be shown again.',
       });
-
     } catch (err) {
       logger.error('API key generation error:', err);
-      
+
       res.status(500).json({
         error: 'Internal server error',
-        message: 'API key generation failed'
+        message: 'API key generation failed',
       });
     }
   },

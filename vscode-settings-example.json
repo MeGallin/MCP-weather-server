@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "weather-server": {
+      "command": "node",
+      "args": ["mcp-weather-stdio.js"],
+      "cwd": "C:\\xampp\\htdocs\\WebSitesDesigns\\developments\\cline-test\\MCP-weather-server",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}
