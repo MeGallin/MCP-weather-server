@@ -73,6 +73,23 @@ app.post(
 );
 
 // Public routes
+app.get('/', (req, res) => {
+  res.json({
+    name: 'MCP Weather Server',
+    version: process.env.npm_package_version || '1.0.0',
+    status: 'running',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/health',
+      mcp: '/mcp',
+      auth: '/auth/login',
+      apiKey: '/auth/api-key'
+    },
+    documentation: 'https://github.com/your-repo/MCP-weather-server#readme',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -113,17 +130,25 @@ app.use(errorHandler);
 
 // Handle 404 errors
 app.use('*', (req, res) => {
-  logger.warn('404 Not Found', {
-    url: req.originalUrl,
-    method: req.method,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-  });
+  // Reduce logging for common health check patterns
+  const isHealthCheck = req.get('User-Agent')?.includes('Go-http-client') || 
+                       req.get('User-Agent')?.includes('curl') ||
+                       req.originalUrl === '/favicon.ico';
+  
+  if (!isHealthCheck) {
+    logger.warn('404 Not Found', {
+      url: req.originalUrl,
+      method: req.method,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+  }
 
   res.status(404).json({
     error: 'Not Found',
     message: 'The requested resource was not found',
     path: req.originalUrl,
+    suggestion: 'Try /health for server status or /mcp for MCP requests'
   });
 });
 
