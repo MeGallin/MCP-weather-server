@@ -1,32 +1,122 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mcpController from './controllers/mcpController.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { logger } from './utils/logger.js';
+import { generalLimiter, mcpLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { authenticateToken, authenticateApiKey } from './middleware/auth.js';
+import { logger, logRequest } from './utils/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Security middleware
-app.use(helmet());
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: process.env.NODE_ENV === 'production'
+}));
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN === '*' ? true : process.env.CORS_ORIGIN?.split(','),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  logRequest(req, res);
+  next();
+});
+
+// General rate limiting
+app.use(generalLimiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ 
+  limit: process.env.REQUEST_SIZE_LIMIT || '10mb' 
+}));
+app.use(express.urlencoded({ 
+  extended: true,
+  limit: process.env.REQUEST_SIZE_LIMIT || '10mb'
+}));
 
-// Routes
-app.post('/mcp', mcpController.handleMCPRequest);
+// Authentication routes (no rate limiting for login to allow retries)
+app.post('/auth/login', authLimiter, mcpController.handleLogin);
+app.post('/auth/api-key', authenticateToken, mcpController.handleApiKeyGeneration);
 
-// Health check endpoint
+// MCP routes with specific rate limiting and authentication
+app.post('/mcp', mcpLimiter, authenticateApiKey, mcpController.handleMCPRequest);
+
+// Public routes
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
+
+// API documentation endpoint (development only)
+if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_API_DOCS === 'true') {
+  app.get('/docs', (req, res) => {
+    res.json({
+      endpoints: {
+        '/health': 'GET - Health check',
+        '/mcp': 'POST - MCP request handler (requires API key)',
+        '/auth/login': 'POST - User authentication',
+        '/auth/api-key': 'POST - Generate API key (requires JWT token)'
+      },
+      authentication: {
+        jwt: 'Bearer token in Authorization header',
+        apiKey: 'X-API-Key header for MCP requests'
+      },
+      rateLimits: {
+        general: '100 requests per 15 minutes',
+        mcp: '30 requests per minute',
+        auth: '5 requests per 15 minutes'
+      }
+    });
+  });
+}
 
 // Global error handler
 app.use(errorHandler);
 
+// Handle 404 errors
+app.use('*', (req, res) => {
+  logger.warn('404 Not Found', {
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+  
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested resource was not found',
+    path: req.originalUrl
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
 app.listen(PORT, () => {
-  logger.info(`MCP server running on port ${PORT}`);
+  logger.info(`MCP server running on port ${PORT}`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version
+  });
 });
