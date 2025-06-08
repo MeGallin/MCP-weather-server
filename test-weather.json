@@ -1,0 +1,7 @@
+{
+  "context": { "conversation_id": "test-123", "user_id": "user-456" },
+  "input": {
+    "endpointName": "getWeather",
+    "queryParams": { "latitude": "40.7128", "longitude": "-74.0060" }
+  }
+}
