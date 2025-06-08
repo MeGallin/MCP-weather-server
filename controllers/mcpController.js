@@ -138,29 +138,56 @@ export default {
             ) {
               // Geocode the location to get coordinates
               try {
-                const geoResponse = await axios.get(
-                  'https://geocoding-api.open-meteo.com/v1/search',
-                  {
-                    params: {
-                      name: toolArgs.location,
-                      count: 1,
-                      language: 'en',
-                      format: 'json',
-                    },
-                    timeout: 5000,
-                  },
-                );
+                // Clean up location string for better geocoding results
+                let cleanLocation = toolArgs.location.trim();
 
-                if (geoResponse.data?.results?.[0]) {
-                  const result = geoResponse.data.results[0];
+                // Try multiple location formats for better success rate
+                const locationVariants = [
+                  cleanLocation,
+                  cleanLocation.replace(/,\s*UK$/i, ''),
+                  cleanLocation.replace(/,\s*US$/i, ''),
+                  cleanLocation.replace(/,\s*USA$/i, ''),
+                  cleanLocation.replace(/,\s*England$/i, ''),
+                ];
+
+                let geoResult = null;
+                let usedLocation = cleanLocation;
+
+                for (const locationVariant of locationVariants) {
+                  try {
+                    const geoResponse = await axios.get(
+                      'https://geocoding-api.open-meteo.com/v1/search',
+                      {
+                        params: {
+                          name: locationVariant,
+                          count: 1,
+                          language: 'en',
+                          format: 'json',
+                        },
+                        timeout: 5000,
+                      },
+                    );
+
+                    if (geoResponse.data?.results?.[0]) {
+                      geoResult = geoResponse.data.results[0];
+                      usedLocation = locationVariant;
+                      break;
+                    }
+                  } catch (variantError) {
+                    // Continue to next variant
+                    continue;
+                  }
+                }
+
+                if (geoResult) {
                   finalArgs = {
                     ...toolArgs,
-                    latitude: result.latitude,
-                    longitude: result.longitude,
-                    location_name: `${result.name}, ${result.country}`,
+                    latitude: geoResult.latitude,
+                    longitude: geoResult.longitude,
+                    location_name: `${geoResult.name}, ${geoResult.country}`,
                   };
                   logger.info(
-                    `Geocoded ${toolArgs.location} to lat: ${result.latitude}, lon: ${result.longitude}`,
+                    `Geocoded "${toolArgs.location}" (using "${usedLocation}") to lat: ${geoResult.latitude}, lon: ${geoResult.longitude}`,
                   );
                 } else {
                   const errorResponse = {
@@ -170,7 +197,13 @@ export default {
                       code: -32602,
                       message: `Location "${toolArgs.location}" not found`,
                       data: {
-                        details: 'Could not geocode the provided location',
+                        details:
+                          'Could not geocode the provided location. Try using just the city name (e.g., "London" instead of "London,UK")',
+                        suggestions: [
+                          'Use just the city name (e.g., "London")',
+                          'Try "City, Country" format (e.g., "London, United Kingdom")',
+                          'Provide latitude and longitude directly',
+                        ],
                       },
                     },
                   };
