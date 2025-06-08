@@ -15,8 +15,8 @@ console.log('Testing MCP Weather Server...\n');
 
 // Test 1: List available tools
 console.log('1. Testing tools/list request:');
-const mcpProcess = spawn('node', ['mcp-weather-stdio.js'], {
-  cwd: __dirname,
+const mcpProcess = spawn('node', ['../../mcp-weather-stdio.js'], {
+  cwd: join(__dirname, '../..'),
   stdio: ['pipe', 'pipe', 'pipe'],
 });
 

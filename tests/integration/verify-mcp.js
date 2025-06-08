@@ -8,7 +8,7 @@ console.log('=== MCP Weather Server Verification ===\n');
 
 try {
   // Import the MCP server module
-  const { server, weatherTools } = await import('./mcp-weather-stdio.js');
+  const { server, weatherTools } = await import('../../mcp-weather-stdio.js');
 
   console.log('✅ MCP server module loaded successfully');
   console.log('✅ Available weather tools:');
