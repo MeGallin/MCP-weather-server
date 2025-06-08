@@ -1,15 +1,21 @@
 import Joi from 'joi';
 
-// MCP request validation schema
-const mcpRequestSchema = Joi.object({
+// Standard MCP JSON-RPC 2.0 request validation schema
+const mcpJsonRpcSchema = Joi.object({
+  jsonrpc: Joi.string().valid('2.0').required(),
+  id: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
+  method: Joi.string().required(),
+  params: Joi.object().optional(),
+}).options({ allowUnknown: true });
+
+// Legacy custom MCP request validation schema (for backward compatibility)
+const mcpLegacySchema = Joi.object({
   input: Joi.object({
     endpointName: Joi.string().required(),
     queryParams: Joi.object().optional(),
     authHeaders: Joi.object().optional(),
   }).required(),
-
   history: Joi.array().optional(),
-
   tools: Joi.array()
     .items(
       Joi.object({
@@ -21,20 +27,125 @@ const mcpRequestSchema = Joi.object({
       }),
     )
     .optional(),
-
   metadata: Joi.object().optional(),
 }).options({ allowUnknown: true });
 
 /**
- * Validates an MCP request body
+ * Validates an MCP request body (supports both JSON-RPC 2.0 and legacy format)
  * @param {Object} requestBody - The request body to validate
- * @returns {Object} Joi validation result
+ * @returns {Object} Joi validation result with normalized format
  */
 export function validateMCPRequest(requestBody) {
-  return mcpRequestSchema.validate(requestBody, {
+  // Try JSON-RPC 2.0 format first
+  const jsonRpcResult = mcpJsonRpcSchema.validate(requestBody, {
     abortEarly: false,
     stripUnknown: false,
   });
+
+  if (!jsonRpcResult.error) {
+    // Convert JSON-RPC format to internal format based on method
+    let normalized;
+
+    switch (requestBody.method) {
+      case 'initialize':
+        normalized = {
+          input: {
+            endpointName: 'initialize',
+            queryParams: requestBody.params || {},
+            authHeaders: {},
+          },
+          jsonrpc: requestBody.jsonrpc,
+          id: requestBody.id,
+          method: requestBody.method,
+          tools: [],
+          metadata: {
+            format: 'jsonrpc',
+            originalMethod: requestBody.method,
+          },
+        };
+        break;
+
+      case 'tools/list':
+        normalized = {
+          input: {
+            endpointName: 'tools_list',
+            queryParams: requestBody.params || {},
+            authHeaders: {},
+          },
+          jsonrpc: requestBody.jsonrpc,
+          id: requestBody.id,
+          method: requestBody.method,
+          tools: [],
+          metadata: {
+            format: 'jsonrpc',
+            originalMethod: requestBody.method,
+          },
+        };
+        break;
+
+      case 'tools/call':
+        const toolName = requestBody.params?.name || 'getWeather';
+        const toolArgs = requestBody.params?.arguments || {};
+        normalized = {
+          input: {
+            endpointName: 'getWeather', // Map to weather endpoint
+            queryParams: toolArgs,
+            authHeaders: {},
+          },
+          jsonrpc: requestBody.jsonrpc,
+          id: requestBody.id,
+          method: requestBody.method,
+          tools: [],
+          metadata: {
+            format: 'jsonrpc',
+            originalMethod: requestBody.method,
+            toolName: toolName,
+          },
+        };
+        break;
+
+      default:
+        // Default for weather requests
+        normalized = {
+          input: {
+            endpointName: 'getWeather',
+            queryParams: requestBody.params || {},
+            authHeaders: {},
+          },
+          jsonrpc: requestBody.jsonrpc,
+          id: requestBody.id,
+          method: requestBody.method,
+          tools: [],
+          metadata: {
+            format: 'jsonrpc',
+            originalMethod: requestBody.method,
+          },
+        };
+    }
+
+    return { error: null, value: normalized };
+  }
+
+  // Fall back to legacy format validation
+  const legacyResult = mcpLegacySchema.validate(requestBody, {
+    abortEarly: false,
+    stripUnknown: false,
+  });
+
+  if (!legacyResult.error) {
+    // Add format metadata
+    const normalized = {
+      ...legacyResult.value,
+      metadata: {
+        ...legacyResult.value.metadata,
+        format: 'legacy',
+      },
+    };
+    return { error: null, value: normalized };
+  }
+
+  // Return the more descriptive error
+  return jsonRpcResult.error ? jsonRpcResult : legacyResult;
 }
 
 /**
